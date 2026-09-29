@@ -1,0 +1,21 @@
+.brand-mark{display:grid;place-items:center;width:52px;height:33px;background:#fff;border-radius:3px;overflow:hidden}
+.brand-mark img{width:100%;height:100%;object-fit:contain}
+.brand-name{font-size:19px;white-space:nowrap}
+.filters{flex-wrap:wrap}
+.filters .search{margin-left:0}
+body,.metric strong,h1,h2,.brand-name{font-family:"Microsoft YaHei","PingFang SC",Arial,sans-serif}
+.metric strong{font-weight:700}
+.product-image.has-image{height:auto!important;overflow:visible;position:static}
+.product-image.has-image img{position:static;width:100%!important;height:auto!important;object-fit:initial!important;display:block;background:#f6f5f1}
+.product-info{position:relative;background:#fff}
+.product-stats{grid-template-columns:repeat(4,1fr)!important}
+.ranked-columns{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.style-list-panel{padding:0;overflow:hidden}
+.style-list-panel .panel-head{padding:17px 18px 12px;margin:0;border-bottom:1px solid var(--line)}
+.style-table{display:grid}
+.style-row{display:grid;grid-template-columns:32px 64px minmax(0,1fr);gap:12px;align-items:center;padding:12px 16px;border-bottom:1px solid #dfe5e1;min-height:102px}
+.style-row:last-child{border-bottom:0}
+.rank-number{font-size:13px;color:#637169;text-align:center}
+.style-thumb{width:64px;height:72px;background:#f2f2ef;display:grid;place-items:center;overflow:hidden;color:#68746e;font-size:12px}
+.style-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.style-main{min-width:0}.style-main>div:first-child{display:flex;justify-content:space-between;align-items:center;gap:10px}.style-main strong{font-size:15px}.style-meta{display:grid;grid-template-columns:repeat(3,max-content);gap:7px 16px;margin-top:7px;color:#53615b;font-size:12px;line-height:1.35}.style-meta b{color:var(--ink);font-size:13px}.style-share-area{margin-top:9px}.style-share-caption{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;color:#52605a;font-size:11px;line-height:1}.style-share-caption b{font-size:12px;color:#1f2c27}.style-share{position:relative;height:8px;margin:0;background:#e7eeea;overflow:hidden}.style-share i{position:absolute;left:0;top:0;bottom:0;background:#2e7664}.style-share-label{display:none!important}.empty-state{padding:24px;color:var(--muted);text-align:center}@media(max-width:1100px){.ranked-columns{grid-template-columns:1fr}}@media(max-width:760px){.style-row{grid-template-columns:24px 48px minmax(0,1fr);gap:8px;padding:10px}.style-thumb{width:48px;height:58px}.style-main strong{font-size:13px}.style-meta{grid-template-columns:repeat(2,max-content);gap:4px 8px;font-size:11px}.style-meta b{font-size:12px}.style-main>div:first-child .season-tag{display:none}}

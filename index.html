@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>IHIMI 销售看板</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="date-filter.css?v=20260804-seasons-1">
+  <link rel="stylesheet" href="brand.css?v=4">
+  <link rel="stylesheet" href="ui-refresh.css?v=20260929-reorder-overview-style-2">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand"><span class="brand-name">成都自研款数据</span></div>
+    <div class="header-meta">
+      <div class="update-status"><span class="pulse"></span>每周五更新 <small id="update-time">等待数据</small></div>
+      <div class="top-actions"><span class="rule">仅计已支付订单</span><button class="icon-button" title="刷新页面" onclick="location.reload()">↻</button></div>
+    </div>
+  </header>
+  <main>
+    <nav class="page-tabs" aria-label="页面导航">
+      <button class="nav-item active" data-page="autumn">CD款数据</button>
+      <button class="nav-item" data-page="reorders">翻单明细</button>
+    </nav>
+    <section id="filters" class="filters" aria-label="数据筛选">
+      <label>月份<select id="period"><option value="all">全部月份</option></select></label>
+      <label>年份<select id="year"><option value="all">全部年份</option></select></label>
+      <label>品牌<select id="brand"><option value="all">全部品牌</option></select></label>
+      <label>平台<select id="platform"><option value="all">全部平台</option></select></label>
+      <label id="top-channel-filter"><span>主要渠道</span><select id="topChannel"><option value="all">全部主要渠道</option></select></label>
+      <div class="multi-filter" id="season-filter">
+        <span>季节</span>
+        <button id="season-toggle" class="multi-filter-toggle" type="button" aria-expanded="false" aria-controls="season-menu"><span id="season-label">全部季节</span></button>
+        <div id="season-menu" class="multi-filter-menu" hidden>
+          <label><input type="checkbox" value="春季">春季</label>
+          <label><input type="checkbox" value="夏季">夏季</label>
+          <label><input type="checkbox" value="秋季">秋季</label>
+          <label><input type="checkbox" value="冬季">冬季</label>
+        </div>
+      </div>
+      <label class="date-range"><span>日期</span><div><input id="startDate" type="date" aria-label="开始日期"><span>至</span><input id="endDate" type="date" aria-label="结束日期"></div></label>
+      <label>品类<select id="category"><option value="all">全部品类</option></select></label>
+      <label id="status-filter-label"><span>商品标签</span><select id="status"><option value="all">全部商品标签</option></select></label>
+      <label class="search">款号/名称<input id="search" placeholder="搜索款号或商品名称"></label>
+      <button id="download" class="reset" type="button">下载表格</button>
+      <button id="reset" class="reset">重置筛选</button>
+    </section>
+    <section id="overview" class="page">
+      <section id="metrics" class="metric-grid"></section>
+      <section class="dashboard-grid">
+        <article class="panel trend-panel"><div class="panel-head"><div><p class="eyebrow">PAYMENT COMPLETED</p><h2>销售趋势</h2></div><span>按支付日期</span></div><div id="trend" class="trend"></div></article>
+        <article class="panel"><div class="panel-head"><div><p class="eyebrow">CHANNEL MIX</p><h2>渠道销售占比</h2></div></div><div id="channels" class="rank-list"></div></article>
+        <article class="panel"><div class="panel-head"><div><p class="eyebrow">SEASON MIX</p><h2>春夏秋冬占比</h2></div></div><div id="seasons" class="rank-list"></div></article>
+        <article class="panel"><div class="panel-head"><div><p class="eyebrow">CATEGORY MIX</p><h2>品类销售占比</h2></div></div><div id="categories" class="rank-list"></div></article>
+      </section>
+      <div id="filters-overview"></div>
+      <article class="panel full-panel"><div class="panel-head"><div><p class="eyebrow">STYLE PERFORMANCE</p><h2>TOP 款式</h2></div><button class="text-button" data-go="products">查看全部 →</button></div><div id="top-products" class="product-grid"></div></article>
+    </section>
+    <section id="products" class="page"><div class="section-title"><div><p class="eyebrow">STYLE LIBRARY</p><h2>TOP 100 款式销售</h2></div><span id="product-count"></span></div><div id="filters-products"></div><article class="panel style-list-panel full-grid-panel"><div class="panel-head"><div><p class="eyebrow">RANK 01-100</p><h2>TOP 100 款式</h2></div></div><div id="products-grid" class="style-table"></div></article></section>
+<section id="autumn" class="page active-page"><div class="section-title"><div><p class="eyebrow">CHENGDU SELF-DEVELOPED</p><h2>成都自研CD款数据</h2></div><span id="autumn-count"></span></div><section class="embedded-overview"><div class="overview-heading"><div><p class="eyebrow">CHENGDU OVERVIEW</p><h2>成都自研数据概览</h2></div><span id="chengdu-screen-count"></span></div><section id="chengdu-metrics" class="metric-grid chengdu-metric-grid"></section><section id="chengdu-charts" class="chengdu-chart-panel"></section></section><div id="filters-autumn"></div><article class="panel style-list-panel full-grid-panel"><div class="panel-head"><div><p class="eyebrow">RANK BY SALES</p><h2>成都自研款式销售</h2></div></div><div id="autumn-grid" class="style-table"></div></article></section>
+    <section id="reorders" class="page"><section id="reorder-overview" class="embedded-overview reorder-overview" aria-label="翻单数据概览"><div class="overview-heading"><div><p class="eyebrow">CHENGDU REORDER OVERVIEW</p><h2>翻单数据概览</h2></div><span id="reorder-screen-count"></span></div><div id="reorder-overview-cards" class="reorder-overview-cards"></div></section><div id="filters-reorders"></div><div class="section-title"><div><p class="eyebrow">CHENGDU REORDER REGISTER</p><h2>成都翻单明细</h2></div><span id="reorder-count"></span></div><article class="panel reorder-panel"><div class="panel-head"><div><p class="eyebrow">REORDER DETAILS</p><h2>IHIMI / 沫晗成都自研翻单款</h2></div><span>按翻单批次记录</span></div><div id="reorder-list"></div></article></section>
+  </main>
+  <template id="product-template"><article class="product-card"><div class="product-image"><span>图片待同步</span></div><div class="product-info"><div class="product-line"><strong class="product-code"></strong><span class="season-tag"></span></div><div class="product-stats"><span>销售额<b class="product-revenue"></b></span><span>销量<b class="product-qty"></b></span><span>库存<b class="product-stock"></b></span><span>签收率<b class="product-signed-rate"></b></span></div><div class="product-bottom"><span>价格 <b class="product-price"></b></span><strong class="product-multiple"></strong></div></div></article></template>
+  <dialog id="image-preview" class="image-preview" aria-label="商品图片预览">
+    <button type="button" class="image-preview-close" aria-label="关闭图片预览">×</button>
+    <img id="image-preview-content" alt="商品图片大图">
+  </dialog>
+  <!-- DASHBOARD_DATA -->
+<script src="app.js?v=20260929-reorder-overview-3"></script>
+</body>
+</html>

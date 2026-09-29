@@ -1,0 +1,178 @@
+.filters {
+  flex-wrap: wrap;
+}
+
+.filters .search {
+  margin-left: 0;
+}
+
+.filters .date-range > div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filters .date-range input {
+  min-width: 142px;
+}
+
+.filters .date-range > div > span {
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.filters .multi-filter {
+  position: relative;
+  display: grid;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.multi-filter-toggle {
+  position: relative;
+  min-width: 140px;
+  height: 33px;
+  padding: 7px 30px 7px 9px;
+  border: 1px solid #dce1de;
+  border-radius: 3px;
+  background: #fbfcfb;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  text-align: left;
+  cursor: pointer;
+}
+
+.multi-filter-toggle::after {
+  content: '';
+  position: absolute;
+  right: 11px;
+  top: 11px;
+  width: 7px;
+  height: 7px;
+  border-right: 1.5px solid var(--ink);
+  border-bottom: 1.5px solid var(--ink);
+  transform: rotate(45deg);
+}
+
+.multi-filter-toggle[aria-expanded="true"]::after {
+  top: 14px;
+  transform: rotate(225deg);
+}
+
+.multi-filter-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 20;
+  width: 174px;
+  padding: 6px;
+  border: 1px solid #dce1de;
+  border-radius: 3px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(24, 32, 36, .12);
+}
+
+.multi-filter-menu label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.multi-filter-menu label:hover {
+  background: #f1f5f2;
+}
+
+.multi-filter-menu input {
+  min-width: 0;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  padding: 0;
+  accent-color: var(--green);
+}
+
+.style-code-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Season stays available for filtering and downloads, but is not displayed per style. */
+.season-tag {
+  display: none;
+}
+
+.focus-tag {
+  display: none;
+}
+
+.focus-tag,
+.test-tag {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.focus-tag {
+  background: #eef3ff;
+  color: #345aa5;
+}
+
+.test-tag.tested {
+  background: #e6f5ee;
+  color: #167154;
+}
+
+.test-tag.mounted {
+  background: #fff2dd;
+  color: #9a6100;
+}
+
+.test-tag.watching {
+  background: #f0f1f1;
+  color: #5f6a67;
+}
+
+.style-insight {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 5px;
+  color: #58635f;
+  font-size: 11px;
+}
+
+.style-insight span {
+  color: var(--muted);
+}
+
+.style-insight b {
+  color: var(--green);
+}
+
+@media (max-width: 760px) {
+  .filters .date-range {
+    width: 100%;
+  }
+
+  .filters .date-range input {
+    min-width: 0;
+    width: calc(50% - 10px);
+  }
+}
