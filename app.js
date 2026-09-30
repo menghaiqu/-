@@ -1,4 +1,4 @@
-const DATA_VERSION = '20260930-order-type-1';
+const DATA_VERSION = '20260930-explanations-1';
 const $ = selector => document.querySelector(selector);
 const yuan = new Intl.NumberFormat('zh-CN', { style: 'currency', currency: 'CNY', maximumFractionDigits: 0 });
 const integer = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 0 });
@@ -19,7 +19,8 @@ const compareSort = (a, b, sort) => {
 const sortHead = (label, key, page, tip) => {
   const current = state.sort[page], active = current.key === key;
   const arrow = active ? (current.dir === 'asc' ? '↑' : '↓') : '↕';
-  return `<th><button type="button" class="sort-control" data-sort-page="${page}" data-sort-key="${key}" title="${tip}">${label}<span>${arrow}</span></button></th>`;
+  const explanation = tip.replaceAll('翻单', '加翻');
+  return `<th><button type="button" class="sort-control has-explain" data-sort-page="${page}" data-sort-key="${key}" data-explain="${explanation}" aria-label="${label}：${explanation}">${label}<span>${arrow}</span></button></th>`;
 };
 const resetPagination = () => Object.keys(state.pagination).forEach(key => { state.pagination[key] = 1; });
 function paginate(rows, key) {
@@ -224,17 +225,17 @@ function renderReorderOverview(rows) {
   const distinctBase = rows => new Set(rows.map(row => baseCode(row.code))).size;
   const money = value => yuan.format(value);
   const blocks = [
-    { title: '总共翻单货值', arrivedLabel: '到货货值', unarrivedLabel: '未到货货值', total: money(amount(codes, 'reorderValue')), arrived: money(amount(arrived, 'reorderValue')), unarrived: money(amount(unarrived, 'reorderValue')) },
-    { title: '总共翻单数量', arrivedLabel: '到货数量', unarrivedLabel: '未到货数量', total: integer.format(amount(codes, 'reorderQty')), arrived: integer.format(amount(codes, 'inboundQty')), unarrived: integer.format(Math.max(0, amount(codes, 'reorderQty') - amount(codes, 'inboundQty'))) },
+    { title: '总共翻单货值', totalTip: '当前筛选范围内，所有加翻采购批次的订单货值合计。', arrivedLabel: '到货货值', arrivedTip: '已有入库数量的 11 位色号，对应加翻订单货值合计。', unarrivedLabel: '未到货货值', unarrivedTip: '入库数量为 0 的 11 位色号，对应加翻订单货值合计。', total: money(amount(codes, 'reorderValue')), arrived: money(amount(arrived, 'reorderValue')), unarrived: money(amount(unarrived, 'reorderValue')) },
+    { title: '总共翻单数量', totalTip: '当前筛选范围内，所有加翻采购批次的下单数量合计。', arrivedLabel: '到货数量', arrivedTip: '当前筛选范围内，加翻明细的入库数量合计。', unarrivedLabel: '未到货数量', unarrivedTip: '总加翻数量减去已入库数量，最低按 0 计。', total: integer.format(amount(codes, 'reorderQty')), arrived: integer.format(amount(codes, 'inboundQty')), unarrived: integer.format(Math.max(0, amount(codes, 'reorderQty') - amount(codes, 'inboundQty'))) },
     { title: '翻单款数 / 色数', paired: [
-      { title: '总翻单款数', total: integer.format(distinctBase(codes)), arrivedLabel: '到货款数', arrived: integer.format(distinctBase(arrived)), unarrivedLabel: '未到款数', unarrived: integer.format(distinctBase(unarrived)) },
-      { title: '总翻单色数', total: integer.format(codes.length), arrivedLabel: '到货色数', arrived: integer.format(arrived.length), unarrivedLabel: '未到色数', unarrived: integer.format(unarrived.length) }
+      { title: '总翻单款数', totalTip: '商品编码前 9 位相同计为同一款，按款号去重后的总数。', total: integer.format(distinctBase(codes)), arrivedLabel: '到货款数', arrivedTip: '至少有一个 11 位色号已入库的 9 位款号数。', arrived: integer.format(distinctBase(arrived)), unarrivedLabel: '未到款数', unarrivedTip: '至少有一个 11 位色号未入库的 9 位款号数。同款有到货色和未到色时，会同时计入两边。', unarrived: integer.format(distinctBase(unarrived)) },
+      { title: '总翻单色数', totalTip: '完整 11 位商品编码相同计为同一色，覆盖加翻款号在商品库存表中的全部色号。', total: integer.format(codes.length), arrivedLabel: '到货色数', arrivedTip: '入库数量大于 0 的完整 11 位色号数。', arrived: integer.format(arrived.length), unarrivedLabel: '未到色数', unarrivedTip: '入库数量为 0 的完整 11 位色号数。', unarrived: integer.format(unarrived.length) }
     ] }
   ];
   $('#reorder-screen-count').textContent = `${codes.length} 个翻单色号 · ${distinctBase(codes)} 个翻单款`;
   $('#reorder-overview-cards').innerHTML = blocks.map(block => block.paired
-    ? `<article class="reorder-overview-card reorder-overview-paired"><div class="reorder-overview-title">${block.title}</div><div class="reorder-paired-grid">${block.paired.map(pair => `<div class="reorder-paired-item"><span class="reorder-paired-title">${pair.title}</span><strong class="reorder-overview-total">${pair.total}</strong><div class="reorder-overview-subgrid"><div><span>${pair.arrivedLabel}</span><b>${pair.arrived}</b></div><div><span>${pair.unarrivedLabel}</span><b>${pair.unarrived}</b></div></div></div>`).join('')}</div></article>`
-    : `<article class="reorder-overview-card"><div class="reorder-overview-title">${block.title}</div><strong class="reorder-overview-total">${block.total}</strong><div class="reorder-overview-subgrid"><div><span>${block.arrivedLabel}</span><b>${block.arrived}</b></div><div><span>${block.unarrivedLabel}</span><b>${block.unarrived}</b></div></div></article>`).join('');
+    ? `<article class="reorder-overview-card reorder-overview-paired"><div class="reorder-overview-title">${block.title}</div><div class="reorder-paired-grid">${block.paired.map(pair => `<div class="reorder-paired-item"><span class="reorder-paired-title has-explain" tabindex="0" data-explain="${pair.totalTip}">${pair.title}</span><strong class="reorder-overview-total">${pair.total}</strong><div class="reorder-overview-subgrid"><div class="has-explain" tabindex="0" data-explain="${pair.arrivedTip}"><span>${pair.arrivedLabel}</span><b>${pair.arrived}</b></div><div class="has-explain" tabindex="0" data-explain="${pair.unarrivedTip}"><span>${pair.unarrivedLabel}</span><b>${pair.unarrived}</b></div></div></div>`).join('')}</div></article>`
+    : `<article class="reorder-overview-card"><div class="reorder-overview-title has-explain" tabindex="0" data-explain="${block.totalTip}">${block.title}</div><strong class="reorder-overview-total">${block.total}</strong><div class="reorder-overview-subgrid"><div class="has-explain" tabindex="0" data-explain="${block.arrivedTip}"><span>${block.arrivedLabel}</span><b>${block.arrived}</b></div><div class="has-explain" tabindex="0" data-explain="${block.unarrivedTip}"><span>${block.unarrivedLabel}</span><b>${block.unarrived}</b></div></div></article>`).join('');
 }
 function renderReorders() {
   const rows = filteredReorders(); renderReorderOverview(rows); const pageInfo = paginate(rows, 'reorders'); $('#reorder-count').textContent = `${rows.length} 个翻单批次`;

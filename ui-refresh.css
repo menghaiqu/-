@@ -725,6 +725,35 @@ main { max-width: none; margin-left: 0; padding: 26px 42px 54px; }
 .reorder-paired-item + .reorder-paired-item { border-left: 1px solid #dbe6f4; padding-left: 16px; }
 .reorder-paired-title { display: block; color: #557092; font-size: 12px; font-weight: 700; }
 .reorder-paired-item .reorder-overview-total { font-size: 25px; padding-top: 5px; }
+.has-explain { position: relative; cursor: help; }
+.has-explain::after {
+  position: absolute;
+  z-index: 80;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  width: max-content;
+  max-width: 280px;
+  padding: 9px 11px;
+  border: 1px solid #cbd8ee;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgba(42,70,123,.16);
+  color: #455675;
+  content: attr(data-explain);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  text-align: left;
+  white-space: normal;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 4px);
+  transition: opacity .15s ease, transform .15s ease;
+}
+.has-explain:hover::after,
+.has-explain:focus-visible::after { opacity: 1; transform: translate(-50%, 0); }
+.reorder-table .sort-control.has-explain::after,
+.sales-table .sort-control.has-explain::after { top: calc(100% + 8px); bottom: auto; }
 @media (max-width: 900px) { .reorder-overview-cards { grid-template-columns: 1fr; } }
 @media (max-width: 560px) { .reorder-overview-cards { grid-template-columns: 1fr; } .reorder-overview-card { border-right: 0; border-bottom: 1px solid #dbe6f4; } .reorder-overview-card:last-child { border-bottom: 0; } }
 .page-tabs .nav-item { border: 1px solid #cfe0d8; border-radius: 999px; background: #fff; color: #38594d; padding: 7px 16px; font-size: 13px; line-height: 1; }
