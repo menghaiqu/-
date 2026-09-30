@@ -1,4 +1,4 @@
-const DATA_VERSION = '20260929-reorder-overview-3';
+const DATA_VERSION = '20260930-order-type-1';
 const $ = selector => document.querySelector(selector);
 const yuan = new Intl.NumberFormat('zh-CN', { style: 'currency', currency: 'CNY', maximumFractionDigits: 0 });
 const integer = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 0 });
@@ -55,6 +55,7 @@ function isPendingArrival(code) {
 // numeric quantity only; arrival status is intentionally not shown.
 const stockLabel = (item) => integer.format(item.stock || 0);
 const arrivalStatus = inboundQty => Number(inboundQty) > 0 ? 'arrived' : 'unarrived';
+const orderTypeLabel = value => value === '翻单' ? '加翻' : (value || '加翻');
 
 // Excluded from every dashboard display and calculation at the user's request.
 const EXCLUDED_PRODUCT_CODES = new Set(['I6XGCD00199']);
@@ -486,4 +487,4 @@ function showPage(page) {
   if (pageTitle) pageTitle.textContent = ({ overview: '销售总览', products: '款式销售', autumn: '秋季新款', reorders: '翻单明细' })[page] || 'IHIMI销售看板';
 }
 async function loadDashboard() { if (globalThis.__DASHBOARD_DATA__) return globalThis.__DASHBOARD_DATA__; const response = await fetch(`data/dashboard.json.gz?v=${DATA_VERSION}`, { cache: 'no-cache' }); if (!response.ok) throw new Error(`HTTP ${response.status}`); if (response.headers.get('content-encoding') === 'gzip') return response.json(); if (!('DecompressionStream' in globalThis)) throw new Error('当前浏览器不支持压缩数据'); return JSON.parse(await new Response(response.body.pipeThrough(new DecompressionStream('gzip'))).text()); }
-loadDashboard().then(data => { state.data = data; $('#update-time').textContent = `更新于 ${data.updatedAt.replace('T', ' ')}`; init(); showPage('autumn'); render(); }).catch(error => { document.body.innerHTML = `<p style="padding:40px">数据载入失败：${error.message}</p>`; });
+loadDashboard().then(data => { state.data = data; (state.data.reorders || []).forEach(row => { row.orderType = orderTypeLabel(row.orderType); }); $('#update-time').textContent = `更新于 ${data.updatedAt.replace('T', ' ')}`; init(); showPage('autumn'); render(); }).catch(error => { document.body.innerHTML = `<p style="padding:40px">数据载入失败：${error.message}</p>`; });
