@@ -210,7 +210,7 @@ function renderReorderOverview(rows) {
   // 翻单款数来自翻单记录的 9 位款号；翻单色数覆盖这些款号在商品库存表中的全部 11 位色号。
   // 这样同款不同色（例如 I6DZCD00400 / I6DZCD00402）会计为 1 款、2 色。
   const reorderStyles = new Set([...byCode.keys()].map(code => code.slice(0, 9)));
-  const productColors = products().filter(item => reorderStyles.has(String(item.code || '').slice(0, 9)));
+  const productColors = [...products().values()].filter(item => reorderStyles.has(String(item.code || '').slice(0, 9)));
   for (const item of productColors) {
     const code = String(item.code || '').toUpperCase();
     if (!byCode.has(code)) byCode.set(code, { code, reorderQty: 0, inboundQty: 0, reorderValue: 0 });
