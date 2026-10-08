@@ -98,6 +98,8 @@ h2 { font-size: 18px; font-weight: 750; }
   padding: 0;
 }
 
+.anchor-estimate-note { color: #63718a; font-size: 12px; line-height: 1.6; margin: 0 0 14px; }
+@media (min-width: 1121px) { #filters.filters:has(#anchor-filter:not([hidden])) { grid-template-columns: repeat(14, minmax(0, 1fr)); } }
 /* Keep the shared filter tray dense without removing any filtering controls. */
 #filters.filters {
   display: grid;

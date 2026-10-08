@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="date-filter.css?v=20260804-seasons-1">
   <link rel="stylesheet" href="brand.css?v=4">
-  <link rel="stylesheet" href="ui-refresh.css?v=20261008-data-refresh-1">
+  <link rel="stylesheet" href="ui-refresh.css?v=20261008-anchor-estimate-1">
 </head>
 <body>
   <header class="app-header">
@@ -27,6 +27,7 @@
       <label>年份<select id="year"><option value="all">全部年份</option></select></label>
       <label>品牌<select id="brand"><option value="all">全部品牌</option></select></label>
       <label>平台<select id="platform"><option value="all">全部平台</option></select></label>
+      <label id="anchor-filter" title="仅对两个IHIMI抖音账号按排班估算；早场07:00、晚场18:00起，按直播时长匹配订单支付时间。场次外及排班缺失的订单不分配主播。">主播（估算）<select id="anchor"><option value="all">全部主播/来源</option></select></label>
       <label id="top-channel-filter"><span>主要渠道</span><select id="topChannel"><option value="all">全部主要渠道</option></select></label>
       <div class="multi-filter" id="season-filter">
         <span>季节</span>
@@ -66,6 +67,6 @@
     <img id="image-preview-content" alt="商品图片大图">
   </dialog>
   <!-- DASHBOARD_DATA -->
-<script src="app.js?v=20261008-data-refresh-1"></script>
+<script src="app.js?v=20261008-anchor-estimate-1"></script>
 </body>
 </html>

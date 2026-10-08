@@ -1,4 +1,4 @@
-const DATA_VERSION = '20261008-data-refresh-1';
+const DATA_VERSION = '20261008-anchor-estimate-1';
 const $ = selector => document.querySelector(selector);
 const yuan = new Intl.NumberFormat('zh-CN', { style: 'currency', currency: 'CNY', maximumFractionDigits: 0 });
 const integer = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 0 });
@@ -94,7 +94,7 @@ function passesProductFilters(product, order = {}) {
 function activeOrders() {
   const productByCode = products(), f = state.filters;
   return state.data.orders.filter(order => {
-    if (!isDashboardProduct(order.code)) return false;
+    if (order.refunded || !isDashboardProduct(order.code)) return false;
     const product = productByCode.get(order.code) || { code: order.code, brand: order.brand, season: '未标注', category: '未分类' };
     return (f.period === 'all' || order.date.startsWith(f.period))
       && (!f.startDate || order.date >= f.startDate) && (!f.endDate || order.date <= f.endDate)
@@ -328,6 +328,7 @@ function reportFilters() {
   ];
   if (f.startDate || f.endDate) parts.push(`${f.startDate || '开始'} 至 ${f.endDate || '结束'}`);
   if (f.search) parts.push(`搜索：${f.search}`);
+  if (f.anchor !== 'all') parts.push(`主播/来源：${f.anchor}（IHIMI抖音主播按排班估算）`);
   return parts.join(' / ');
 }
 function reportBarRows(entries, total) {
@@ -352,6 +353,10 @@ function downloadTable() {
   const data = rows.map(row => isReorders
     ? [imageUrl(row.image), row.code, row.orderNo, row.brand, row.season || '', row.createdAt || '', row.deliveryDate || '', row.orderType || '翻单', row.reorderQty, row.inboundQty === 0 ? '未到货' : row.inboundQty, row.reorderValue, row.netQty, `${(row.sellThrough * 100).toFixed(1)}%`, row.price || '', row.cost || '', row.multiple ? `${row.multiple.toFixed(2)}x` : '', row.stock || 0, row.remainingValue]
     : [imageUrl(row.image), row.code, row.season || '', row.category || '', row.productTag || '未设置', row.revenue, row.qty, `${(row.signedRate * 100).toFixed(1)}%`, row.stock || 0, row.arrivedQty > 0 ? row.arrivedQty : '未到货', row.price || '', row.cost || '', row.price && row.cost ? `${(row.price / row.cost).toFixed(2)}x` : '', row.stockValue, row.topChannel || '', `${(row.topChannelShare * 100).toFixed(1)}%`]);
+  if (!isReorders) {
+    head.push('主播筛选', '主播归属说明');
+    data.forEach(row => row.push(state.filters.anchor === 'all' ? '全部主播/来源' : state.filters.anchor, '两个IHIMI抖音账号按排班估算：早场07:00、晚场18:00起，按时长匹配支付时间；排班缺失或场次外为未匹配主播。'));
+  }
   downloadCsv(`${isReorders ? '成都翻单明细' : '成都款式销售'}_${new Date().toISOString().slice(0, 10)}.csv`, head, data);
 }
 async function download() {
@@ -412,12 +417,16 @@ function configureTopChannelFilter(page) {
   select.replaceChildren(...[['all', '全部主要渠道'], ...channels.map(channel => [channel, channel])]
     .map(([value, text]) => Object.assign(document.createElement('option'), { value, textContent: text })));
   select.value = state.filters.topChannel || 'all';
+  $('#anchor-filter').hidden = !visible;
+  if (!visible) { state.filters.anchor = 'all'; $('#anchor').value = 'all'; }
 }
 function init() {
   if (state.initialized) return; state.initialized = true; const items = state.data.items, dates = state.data.daily.map(row => row.date).sort();
+  $('#filters-autumn').insertAdjacentHTML('afterend', '<p class="anchor-estimate-note">主播归属为估算：两个 IHIMI 抖音账号按排班，以早场 07:00、晚场 18:00 起播及直播时长匹配订单支付时间。排班缺失或场次外订单显示为“未匹配主播”。</p>');
   const add = (id, values) => $(id).insertAdjacentHTML('beforeend', values.map(value => `<option value="${value}">${value}</option>`).join(''));
   add('#year', [...new Set(items.map(item => yearOf(item.season)).filter(value => value !== '未标注'))].sort().reverse()); add('#brand', [...new Set(items.map(item => item.brand).filter(Boolean))].sort());
   add('#platform', [...new Set(state.data.orders.map(order => order.platform || '抖音').filter(Boolean))].sort());
+  add('#anchor', [...new Set(state.data.orders.map(order => order.anchor).filter(Boolean))].sort());
   $('#period').innerHTML += [...new Set(dates.map(date => date.slice(0, 7)))].sort().reverse().map(month => `<option value="${month}">${Number(month.slice(5))}月</option>`).join('');
   // Category is derived from the fourth character of the colour code when
   // the source workbook leaves its category field blank.
@@ -428,7 +437,7 @@ function init() {
     resetPagination();
     render();
   };
-  ['period', 'year', 'brand', 'platform', 'topChannel', 'category', 'status'].forEach(id => {
+  ['period', 'year', 'brand', 'platform', 'topChannel', 'anchor', 'category', 'status'].forEach(id => {
     const input = $("#" + id);
     input.addEventListener('change', refreshSelect(id));
     input.addEventListener('input', refreshSelect(id));
