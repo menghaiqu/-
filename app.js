@@ -1,4 +1,4 @@
-const DATA_VERSION = '20260930-explanations-1';
+const DATA_VERSION = '20261008-data-refresh-1';
 const $ = selector => document.querySelector(selector);
 const yuan = new Intl.NumberFormat('zh-CN', { style: 'currency', currency: 'CNY', maximumFractionDigits: 0 });
 const integer = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 0 });
