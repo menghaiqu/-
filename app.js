@@ -1,4 +1,4 @@
-const DATA_VERSION = '20261018-product-hover-1';
+const DATA_VERSION = '20261018-product-hover-2';
 const $ = selector => document.querySelector(selector);
 const yuan = new Intl.NumberFormat('zh-CN', { style: 'currency', currency: 'CNY', maximumFractionDigits: 0 });
 const integer = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 0 });
@@ -162,11 +162,30 @@ function card(item) {
   node.querySelector('.product-code').textContent = item.code; node.querySelector('.product-revenue').textContent = yuan.format(item.revenue); node.querySelector('.product-qty').textContent = integer.format(item.qty); node.querySelector('.product-stock').textContent = stockLabel(item); node.querySelector('.product-signed-rate').textContent = `${(item.signedRate * 100).toFixed(1)}%`; node.querySelector('.product-price').textContent = item.price ? yuan.format(item.price) : '-'; node.querySelector('.product-multiple').textContent = item.cost && item.price ? `倍率 ${(item.price / item.cost).toFixed(2)}` : '倍率待核'; return node;
 }
 const copyText = (item, key, fallback) => String(item?.[key] || '').trim() || fallback;
+const generatedProductCopy = item => {
+  const category = item.category || '单品';
+  const season = item.season || '当季';
+  const title = String(item.title || '');
+  const winter = /冬|羽绒|棉衣|大衣|羊毛|保暖/.test(`${season}${title}`);
+  const loose = /阔腿|宽松|廓形|直筒/.test(title);
+  const textile = /针织|毛衫/.test(category) ? '柔软亲肤、保暖舒适，日常穿着不挑场景。' : winter ? '面料质感挺括，兼顾保暖与轻松穿着，适合换季和通勤。' : '面料舒适有质感，版型利落，穿着轻松不费力。';
+  const shape = loose ? '宽松有余量，修饰身形又保留松弛感。' : '版型干净利落，修饰身形比例，日常好穿不挑人。';
+  const sellingPoint = `${textile}${shape}`;
+  const styling = category.includes('裤') ? '搭配简约针织衫或衬衫，配乐福鞋、短靴都能完成通勤和日常造型。'
+    : category.includes('裙') || category.includes('连衣') ? '搭配短外套或针织开衫，配低跟鞋、长靴即可切换通勤与约会场景。'
+      : category.includes('外套') || category.includes('大衣') || category.includes('风衣') ? '内搭针织衫、衬衫或连衣裙，配直筒裤和短靴，层次清晰显比例。'
+        : category.includes('衬衫') || category.includes('小衫') || category.includes('T恤') || category.includes('针织') || category.includes('毛衫') ? '单穿简洁有型，也可以叠穿马甲或外套，下装搭配直筒裤、半裙都协调。'
+          : category.includes('套装') ? '整套穿着省心利落，拆开后也能分别搭配基础单品，一套多穿。'
+            : '搭配基础款下装和简洁鞋履，整体干净利落，适合日常通勤。';
+  const script = `这款${category}很适合${season}穿，${sellingPoint} ${styling} 喜欢简约、显气质穿搭的可以重点看这款。`;
+  return { sellingPoint, styling, script };
+};
 const productHoverMarkup = item => {
   const title = item.title || '暂无商品标题';
-  const sellingPoint = copyText(item, 'sellingPoint', '待补充卖点');
-  const styling = copyText(item, 'styling', '待补充搭配方式');
-  const script = copyText(item, 'script', '待补充直播话术');
+  const generated = generatedProductCopy(item);
+  const sellingPoint = copyText(item, 'sellingPoint', generated.sellingPoint);
+  const styling = copyText(item, 'styling', generated.styling);
+  const script = copyText(item, 'script', generated.script);
   return `<div class="product-hover-kicker">${escapeHtml(item.code || '')}</div><strong class="product-hover-title">${escapeHtml(title)}</strong><div class="product-hover-tags"><span>${escapeHtml(item.season || '未标注')}</span><span>${escapeHtml(item.category || '未分类')}</span></div><div class="product-hover-metrics"><span>销售额<b>${yuan.format(item.revenue || 0)}</b></span><span>净销量<b>${integer.format(item.qty || 0)}</b></span><span>库存<b>${stockLabel(item)}</b></span><span>成本价<b>${item.cost ? yuan.format(item.cost) : '-'}</b></span><span>页面价<b>${item.price ? yuan.format(item.price) : '-'}</b></span><span>倍率<b>${item.price && item.cost ? `${(item.price / item.cost).toFixed(2)}x` : '-'}</b></span></div><dl class="product-hover-copy"><div><dt>卖点</dt><dd>${escapeHtml(sellingPoint)}</dd></div><div><dt>搭配方式</dt><dd>${escapeHtml(styling)}</dd></div><div><dt>话术</dt><dd>${escapeHtml(script)}</dd></div></dl>`;
 };
 const hoverAttr = item => `data-product-hover="${escapeHtml(item.code || '')}" tabindex="0"`;
