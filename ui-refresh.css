@@ -866,7 +866,7 @@ main { padding: 30px 46px 62px; background: linear-gradient(180deg, #fbfdff 0, #
 .sales-table tbody tr:hover, .reorder-table tbody tr:hover { background: #f5f8ff; }
 .sales-image[data-product-hover], .style-thumb[data-product-hover], .product-image[data-product-hover] { cursor: help; outline: none; }
 .sales-image[data-product-hover]:focus-visible, .style-thumb[data-product-hover]:focus-visible, .product-image[data-product-hover]:focus-visible { box-shadow: 0 0 0 3px rgba(54, 95, 196, .25); }
-.product-hover-card { position: fixed; z-index: 1000; width: min(480px, calc(100vw - 24px)); max-height: min(620px, calc(100vh - 24px)); overflow: auto; padding: 17px 18px; border: 1px solid #b9c9e4; border-radius: 10px; background: rgba(255,255,255,.99); box-shadow: 0 16px 36px rgba(28,55,97,.2); color: #1e365b; pointer-events: none; opacity: 0; transform: translateY(5px); transition: opacity .14s ease, transform .14s ease; }
+.product-hover-card { position: fixed; z-index: 1000; width: min(520px, calc(100vw - 24px)); max-height: min(680px, calc(100vh - 24px)); overflow: auto; padding: 19px 20px; border: 1px solid #a9bedf; border-radius: 12px; background: rgba(255,255,255,.995); box-shadow: 0 18px 42px rgba(28,55,97,.24); color: #1e365b; pointer-events: none; opacity: 0; transform: translateY(5px); transition: opacity .14s ease, transform .14s ease; }
 .product-hover-card.visible { opacity: 1; transform: translateY(0); }
 .product-hover-kicker { color: #506b92; font-size: 11px; letter-spacing: .04em; font-weight: 700; }
 .product-hover-title { display: block; margin-top: 5px; color: #102b58; font-size: 15px; line-height: 1.45; }
@@ -878,7 +878,7 @@ main { padding: 30px 46px 62px; background: linear-gradient(180deg, #fbfdff 0, #
 .product-hover-copy { display: grid; gap: 10px; margin: 12px 0 0; }
 .product-hover-copy div { display: grid; grid-template-columns: 66px minmax(0, 1fr); gap: 9px; align-items: start; padding-top: 9px; border-top: 1px solid #e3ebf7; }
 .product-hover-copy dt { color: #315e91; font-size: 12px; font-weight: 700; }
-.product-hover-copy dd { margin: 0; color: #304a6d; font-size: 13px; line-height: 1.7; white-space: pre-wrap; word-break: break-word; }
+.product-hover-copy dd { margin: 0; color: #304a6d; font-size: 13px; line-height: 1.75; white-space: pre-wrap; word-break: break-word; }
 @media (max-width: 560px) { .product-hover-card { width: calc(100vw - 20px); padding: 14px; } .product-hover-copy dd { font-size: 12px; line-height: 1.6; } }
 .sales-table td:nth-child(3), .sales-table td b, .reorder-table td b { color: #1c2d47; }
 .sort-control span { color: #525ad6; }
