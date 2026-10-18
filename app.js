@@ -1,4 +1,4 @@
-const DATA_VERSION = '20261018-product-hover-5';
+const DATA_VERSION = '20261018-product-hover-6';
 const $ = selector => document.querySelector(selector);
 const yuan = new Intl.NumberFormat('zh-CN', { style: 'currency', currency: 'CNY', maximumFractionDigits: 0 });
 const integer = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 0 });
@@ -518,7 +518,9 @@ function init() {
     productHover.innerHTML = productHoverMarkup(item); productHover.classList.add('visible'); productHover.setAttribute('aria-hidden', 'false'); moveProductHover(event);
   });
   document.addEventListener('mousemove', event => { if (event.target.closest('[data-product-hover]')) moveProductHover(event); });
-  document.addEventListener('mouseout', event => { const target = event.target.closest('[data-product-hover]'); if (target && !target.contains(event.relatedTarget)) hideProductHover(); });
+  document.addEventListener('mouseout', event => { const target = event.target.closest('[data-product-hover]'); if (target && !target.contains(event.relatedTarget) && event.relatedTarget !== productHover && !productHover.contains(event.relatedTarget)) hideProductHover(); });
+  productHover.addEventListener('mouseenter', () => productHover.classList.add('visible'));
+  productHover.addEventListener('mouseleave', hideProductHover);
   document.addEventListener('focusin', event => { const target = event.target.closest('[data-product-hover]'); if (!target || !state.data) return; const item = products().get(target.dataset.productHover) || state.data.items.find(row => row.code === target.dataset.productHover); if (item) { productHover.innerHTML = productHoverMarkup(item); productHover.classList.add('visible'); productHover.setAttribute('aria-hidden', 'false'); const rect = target.getBoundingClientRect(); moveProductHover({ clientX: rect.right, clientY: rect.top }); } });
   document.addEventListener('focusout', event => { if (event.target.closest('[data-product-hover]')) hideProductHover(); });
   document.addEventListener('click', event => {
