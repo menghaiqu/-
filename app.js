@@ -1,4 +1,4 @@
-const DATA_VERSION = '20261018-product-hover-6';
+const DATA_VERSION = '20261018-product-card-copy-1';
 const $ = selector => document.querySelector(selector);
 const yuan = new Intl.NumberFormat('zh-CN', { style: 'currency', currency: 'CNY', maximumFractionDigits: 0 });
 const integer = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 0 });
@@ -162,6 +162,19 @@ function card(item) {
   node.querySelector('.product-code').textContent = item.code; node.querySelector('.product-revenue').textContent = yuan.format(item.revenue); node.querySelector('.product-qty').textContent = integer.format(item.qty); node.querySelector('.product-stock').textContent = stockLabel(item); node.querySelector('.product-signed-rate').textContent = `${(item.signedRate * 100).toFixed(1)}%`; node.querySelector('.product-price').textContent = item.price ? yuan.format(item.price) : '-'; node.querySelector('.product-multiple').textContent = item.cost && item.price ? `倍率 ${(item.price / item.cost).toFixed(2)}` : '倍率待核'; return node;
 }
 const copyText = (item, key, fallback) => String(item?.[key] || '').trim() || fallback;
+const productCardCopy = item => state.data?.productCopy?.[String(item?.code || '').slice(0, 9)] || null;
+const copyList = (value, fallback) => {
+  if (!Array.isArray(value)) return String(value || '').trim() || fallback;
+  const text = value.map(entry => {
+    if (typeof entry === 'string') return entry.trim();
+    if (!entry || typeof entry !== 'object') return '';
+    const title = entry.title ? `${entry.title}：` : '';
+    const purpose = entry.purpose ? `${entry.purpose}\n` : '';
+    const lines = Array.isArray(entry.lines) ? entry.lines.filter(Boolean).join('\n') : String(entry.lines || '').trim();
+    return `${title}${purpose}${lines}`.trim();
+  }).filter(Boolean).join('\n\n');
+  return text || fallback;
+};
 const generatedProductCopy = item => {
   const category = item.category || '单品';
   const season = item.season || '当季';
@@ -181,16 +194,29 @@ const generatedProductCopy = item => {
         : category.includes('衬衫') || category.includes('小衫') || category.includes('T恤') || category.includes('针织') || category.includes('毛衫') ? '单穿简洁有型，外面叠穿马甲、西装或风衣也不抢层次；下装搭直筒裤、阔腿裤或半裙都协调。'
           : category.includes('套装') ? '整套穿着省心利落，适合上班、见客户和日常出行；拆开后还能分别搭配基础款，一套衣服多种穿法。'
             : '搭配基础款下装和简洁鞋履，利用同色系或一深一浅的配色，整体干净又显气质。';
-  const script = `主播可以这样介绍：姐妹们看这款${category}，先别只看图片，它上身的重点是${feature}。面料方面，${textile}；版型方面，${shape}；${design}\n\n这件最值得买的地方是使用场景很广，${scene}。搭配不用重新买一套衣服，${styling}\n\n如果你平时喜欢${variant % 2 ? '有一点设计感、但又不想太夸张' : '简洁耐看、穿着舒服还要显气质'}的风格，这款可以重点留意。建议按照平时常穿尺码选择，想要更松弛的效果可以在详情尺码范围内选大一码。`;
+  const scriptLead = `姐妹们，这款${category}先看整体气质：${feature}。它不是只能拍照的一次性款，而是${scene}都能反复穿的实用单品。`;
+  const scriptFit = category.includes('裤') ? `重点看裤型，${shape}。腰部和腿部留量比较友好，坐下不会卡，走动时也不会显得拖沓；想要显腿直、显比例，搭配短款或塞衣角的上装会更明显。`
+    : category.includes('裙') || category.includes('连衣') ? `重点看裙身比例，${shape}。单穿就能形成完整的纵向线条，不需要复杂配饰；如果担心身材比例，腰间加一条细腰带或选择短外套，视觉上会更利落。`
+      : category.includes('外套') || category.includes('大衣') || category.includes('风衣') ? `重点看外套的轮廓，${shape}。里面穿薄针织不会臃肿，敞开穿有层次，扣起来又显得整齐，适合需要在室内外切换的通勤场景。`
+        : category.includes('套装') ? `重点是整套的完成度，${shape}。早上不用花时间想搭配，直接穿就很利落；上下装拆开后也能和衣柜里的基础款组合，实际穿着频率会更高。`
+          : `重点看上身线条，${shape}。单穿有细节，叠穿也不会抢外套的存在感，属于衣柜里很容易被反复拿出来穿的一件。`;
+  const scriptStyle = `搭配上，${styling}`;
+  const scriptClose = `如果你平时喜欢${variant % 2 ? '有一点设计感但不夸张' : '简洁耐看、穿着舒服又显气质'}的风格，这款可以重点留意。建议先按平时常穿尺码选择；喜欢更松弛的效果，再结合详情尺码表选择大一码。`;
+  const script = `${scriptLead}\n\n${scriptFit}\n\n${scriptStyle}\n\n${scriptClose}`;
   return { sellingPoint, styling, script };
 };
 const productHoverMarkup = item => {
   const title = item.title || '暂无商品标题';
   const generated = generatedProductCopy(item);
-  const sellingPoint = copyText(item, 'sellingPoint', generated.sellingPoint);
-  const styling = copyText(item, 'styling', generated.styling);
-  const script = copyText(item, 'script', generated.script);
-  return `<div class="product-hover-kicker">${escapeHtml(item.code || '')}</div><strong class="product-hover-title">${escapeHtml(title)}</strong><div class="product-hover-tags"><span>${escapeHtml(item.season || '未标注')}</span><span>${escapeHtml(item.category || '未分类')}</span></div><div class="product-hover-metrics"><span>销售额<b>${yuan.format(item.revenue || 0)}</b></span><span>净销量<b>${integer.format(item.qty || 0)}</b></span><span>库存<b>${stockLabel(item)}</b></span><span>成本价<b>${item.cost ? yuan.format(item.cost) : '-'}</b></span><span>页面价<b>${item.price ? yuan.format(item.price) : '-'}</b></span><span>倍率<b>${item.price && item.cost ? `${(item.price / item.cost).toFixed(2)}x` : '-'}</b></span></div><dl class="product-hover-copy"><div><dt>卖点</dt><dd>${escapeHtml(sellingPoint)}</dd></div><div><dt>搭配方式</dt><dd>${escapeHtml(styling)}</dd></div><div><dt>话术</dt><dd>${escapeHtml(script)}</dd></div></dl>`;
+  const cardCopy = productCardCopy(item);
+  const sellingPoint = cardCopy ? copyList(cardCopy.sellingPoints, generated.sellingPoint) : copyText(item, 'sellingPoint', generated.sellingPoint);
+  const styling = cardCopy ? copyList(cardCopy.styling, generated.styling) : copyText(item, 'styling', generated.styling);
+  const script = cardCopy ? copyList(cardCopy.script, generated.script) : copyText(item, 'script', generated.script);
+  const positioning = cardCopy?.positioning ? `<div><dt>定位</dt><dd>${escapeHtml(cardCopy.positioning)}</dd></div>` : '';
+  const audience = cardCopy ? copyList(cardCopy.audience, '') : '';
+  const wearingLogic = cardCopy ? copyList(cardCopy.wearingLogic, '') : '';
+  const extra = `${audience ? `<div><dt>适合人群</dt><dd>${escapeHtml(audience)}</dd></div>` : ''}${wearingLogic ? `<div><dt>穿着逻辑</dt><dd>${escapeHtml(wearingLogic)}</dd></div>` : ''}`;
+  return `<div class="product-hover-kicker">${escapeHtml(item.code || '')}</div><strong class="product-hover-title">${escapeHtml(title)}</strong><div class="product-hover-tags"><span>${escapeHtml(item.season || '未标注')}</span><span>${escapeHtml(item.category || '未分类')}</span></div><div class="product-hover-metrics"><span>销售额<b>${yuan.format(item.revenue || 0)}</b></span><span>净销量<b>${integer.format(item.qty || 0)}</b></span><span>库存<b>${stockLabel(item)}</b></span><span>成本价<b>${item.cost ? yuan.format(item.cost) : '-'}</b></span><span>页面价<b>${item.price ? yuan.format(item.price) : '-'}</b></span><span>倍率<b>${item.price && item.cost ? `${(item.price / item.cost).toFixed(2)}x` : '-'}</b></span></div><dl class="product-hover-copy">${positioning}<div><dt>卖点</dt><dd>${escapeHtml(sellingPoint)}</dd></div><div><dt>搭配方式</dt><dd>${escapeHtml(styling)}</dd></div>${extra}<div><dt>主播话术</dt><dd>${escapeHtml(script)}</dd></div></dl>`;
 };
 const hoverAttr = item => `data-product-hover="${escapeHtml(item.code || '')}" tabindex="0"`;
 function productCard(item, index, total, label) {
@@ -552,5 +578,5 @@ function showPage(page) {
   const pageTitle = $('#page-title');
   if (pageTitle) pageTitle.textContent = ({ overview: '销售总览', products: '款式销售', autumn: '秋季新款', reorders: '翻单明细' })[page] || 'IHIMI销售看板';
 }
-async function loadDashboard() { if (globalThis.__DASHBOARD_DATA__) return globalThis.__DASHBOARD_DATA__; const response = await fetch(`data/dashboard.json.gz?v=${DATA_VERSION}`, { cache: 'no-cache' }); if (!response.ok) throw new Error(`HTTP ${response.status}`); if (response.headers.get('content-encoding') === 'gzip') return response.json(); if (!('DecompressionStream' in globalThis)) throw new Error('当前浏览器不支持压缩数据'); return JSON.parse(await new Response(response.body.pipeThrough(new DecompressionStream('gzip'))).text()); }
+async function loadDashboard() { if (globalThis.__DASHBOARD_DATA__) return globalThis.__DASHBOARD_DATA__; const [response, copyResponse] = await Promise.all([fetch(`data/dashboard.json.gz?v=${DATA_VERSION}`, { cache: 'no-cache' }), fetch(`data/product-copy.json?v=${DATA_VERSION}`, { cache: 'no-cache' })]); if (!response.ok) throw new Error(`HTTP ${response.status}`); if (!copyResponse.ok) throw new Error(`商品卡话术 HTTP ${copyResponse.status}`); const data = response.headers.get('content-encoding') === 'gzip' ? await response.json() : !('DecompressionStream' in globalThis) ? JSON.parse(await response.text()) : JSON.parse(await new Response(response.body.pipeThrough(new DecompressionStream('gzip'))).text()); data.productCopy = await copyResponse.json(); return data; }
 loadDashboard().then(data => { state.data = data; (state.data.reorders || []).forEach(row => { row.orderType = orderTypeLabel(row.orderType); }); $('#update-time').textContent = `更新于 ${data.updatedAt.replace('T', ' ')}`; init(); showPage('autumn'); render(); }).catch(error => { document.body.innerHTML = `<p style="padding:40px">数据载入失败：${error.message}</p>`; });
