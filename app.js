@@ -1,4 +1,4 @@
-const DATA_VERSION = '20261018-data-refresh-1';
+const DATA_VERSION = '20261018-product-hover-1';
 const $ = selector => document.querySelector(selector);
 const yuan = new Intl.NumberFormat('zh-CN', { style: 'currency', currency: 'CNY', maximumFractionDigits: 0 });
 const integer = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 0 });
@@ -155,13 +155,25 @@ function renderTrend(orders) {
 }
 function card(item) {
   const node = $('#product-template').content.cloneNode(true);
+  const imageBox = node.querySelector('.product-image');
+  imageBox.dataset.productHover = item.code;
+  imageBox.tabIndex = 0;
   if (item.image) { const image = document.createElement('img'); image.src = item.image; image.alt = item.code; image.loading = 'lazy'; image.decoding = 'async'; const box = node.querySelector('.product-image'); box.classList.add('has-image'); box.replaceChildren(image); }
   node.querySelector('.product-code').textContent = item.code; node.querySelector('.product-revenue').textContent = yuan.format(item.revenue); node.querySelector('.product-qty').textContent = integer.format(item.qty); node.querySelector('.product-stock').textContent = stockLabel(item); node.querySelector('.product-signed-rate').textContent = `${(item.signedRate * 100).toFixed(1)}%`; node.querySelector('.product-price').textContent = item.price ? yuan.format(item.price) : '-'; node.querySelector('.product-multiple').textContent = item.cost && item.price ? `倍率 ${(item.price / item.cost).toFixed(2)}` : '倍率待核'; return node;
 }
+const copyText = (item, key, fallback) => String(item?.[key] || '').trim() || fallback;
+const productHoverMarkup = item => {
+  const title = item.title || '暂无商品标题';
+  const sellingPoint = copyText(item, 'sellingPoint', '待补充卖点');
+  const styling = copyText(item, 'styling', '待补充搭配方式');
+  const script = copyText(item, 'script', '待补充直播话术');
+  return `<div class="product-hover-kicker">${escapeHtml(item.code || '')}</div><strong class="product-hover-title">${escapeHtml(title)}</strong><div class="product-hover-tags"><span>${escapeHtml(item.season || '未标注')}</span><span>${escapeHtml(item.category || '未分类')}</span></div><div class="product-hover-metrics"><span>销售额<b>${yuan.format(item.revenue || 0)}</b></span><span>净销量<b>${integer.format(item.qty || 0)}</b></span><span>库存<b>${stockLabel(item)}</b></span><span>成本价<b>${item.cost ? yuan.format(item.cost) : '-'}</b></span><span>页面价<b>${item.price ? yuan.format(item.price) : '-'}</b></span><span>倍率<b>${item.price && item.cost ? `${(item.price / item.cost).toFixed(2)}x` : '-'}</b></span></div><dl class="product-hover-copy"><div><dt>卖点</dt><dd>${escapeHtml(sellingPoint)}</dd></div><div><dt>搭配方式</dt><dd>${escapeHtml(styling)}</dd></div><div><dt>话术</dt><dd>${escapeHtml(script)}</dd></div></dl>`;
+};
+const hoverAttr = item => `data-product-hover="${escapeHtml(item.code || '')}" tabindex="0"`;
 function productCard(item, index, total, label) {
   const tag = item.status === 'tested' ? '已测' : item.status === 'mounted' ? '挂车' : item.status === 'reordered' ? '已翻' : '观察中';
   const tagClass = item.status === 'tested' ? 'tested' : item.status === 'mounted' ? 'mounted' : 'watching';
-  return `<article class="style-row"><span class="rank-number">${index + 1}</span><div class="style-thumb">${item.image ? `<img src="${item.image}" alt="${item.code}" loading="lazy" decoding="async">` : '<span>待同步</span>'}</div><div class="style-main"><div class="style-code-line"><strong>${item.code}</strong><span class="test-tag ${tagClass}">${tag}</span></div><div class="style-meta"><span>销售额 <b>${yuan.format(item.revenue)}</b></span><span>销量 <b>${integer.format(item.qty)}</b></span><span>库存 <b>${integer.format(item.stock || 0)}</b></span><span>签收率 <b>${(item.signedRate * 100).toFixed(1)}%</b></span><span>页面价 <b>${item.price ? yuan.format(item.price) : '-'}</b></span><span>倍率 <b>${item.price && item.cost ? `${(item.price / item.cost).toFixed(2)}x` : '-'}</b></span></div><div class="style-share-area"><div class="style-share-caption"><span>${label}</span><b>${pct(item.revenue, total)}</b></div><div class="style-share"><i style="width:${total ? item.revenue / total * 100 : 0}%"></i></div></div></div></article>`;
+  return `<article class="style-row"><span class="rank-number">${index + 1}</span><div class="style-thumb" ${hoverAttr(item)}>${item.image ? `<img src="${item.image}" alt="${item.code}" loading="lazy" decoding="async">` : '<span>待同步</span>'}</div><div class="style-main"><div class="style-code-line"><strong>${item.code}</strong><span class="test-tag ${tagClass}">${tag}</span></div><div class="style-meta"><span>销售额 <b>${yuan.format(item.revenue)}</b></span><span>销量 <b>${integer.format(item.qty)}</b></span><span>库存 <b>${integer.format(item.stock || 0)}</b></span><span>签收率 <b>${(item.signedRate * 100).toFixed(1)}%</b></span><span>页面价 <b>${item.price ? yuan.format(item.price) : '-'}</b></span><span>倍率 <b>${item.price && item.cost ? `${(item.price / item.cost).toFixed(2)}x` : '-'}</b></span></div><div class="style-share-area"><div class="style-share-caption"><span>${label}</span><b>${pct(item.revenue, total)}</b></div><div class="style-share"><i style="width:${total ? item.revenue / total * 100 : 0}%"></i></div></div></div></article>`;
 }
 function renderProducts(items) {
   const rows = items;
@@ -177,7 +189,7 @@ function renderProducts(items) {
     const rowsHtml = pageInfo.rows.map((item, index) => {
       const tag = item.status === 'tested' ? '已测' : item.status === 'mounted' ? '挂车' : item.status === 'reordered' ? '已翻' : '观察中';
       const tagClass = item.status === 'tested' ? 'tested' : item.status === 'mounted' ? 'mounted' : 'watching';
-      return `<tr><td class="sales-image">${item.image ? `<img src="${item.image}" alt="${item.code}" loading="lazy" decoding="async">` : '-'}</td><td><b>${pageInfo.start + index + 1}</b></td><td><strong>${item.code}</strong></td><td>${item.season || '-'}</td><td><b>${yuan.format(item.revenue)}</b></td><td><b>${integer.format(item.qty)}</b></td><td>${(item.signedRate * 100).toFixed(1)}%</td><td>${stockLabel(item)}</td><td>${item.arrivedQty > 0 ? integer.format(item.arrivedQty) : '<b class="not-arrived">未到货</b>'}</td><td>${item.price ? yuan.format(item.price) : '-'}</td><td>${item.cost ? yuan.format(item.cost) : '-'}</td><td>${item.price && item.cost ? `${(item.price / item.cost).toFixed(2)}x` : '-'}</td><td><b>${yuan.format(item.stockValue)}</b></td><td>${item.topChannel || '-'}</td><td>${item.topChannelShare ? `${(item.topChannelShare * 100).toFixed(1)}%` : '0.0%'}</td><td><div class="table-share"><b>${pct(item.revenue, total)}</b><i style="width:${total ? item.revenue / total * 100 : 0}%"></i></div></td></tr>`;
+      return `<tr><td class="sales-image" ${hoverAttr(item)}>${item.image ? `<img src="${item.image}" alt="${item.code}" loading="lazy" decoding="async">` : '-'}</td><td><b>${pageInfo.start + index + 1}</b></td><td><strong>${item.code}</strong></td><td>${item.season || '-'}</td><td><b>${yuan.format(item.revenue)}</b></td><td><b>${integer.format(item.qty)}</b></td><td>${(item.signedRate * 100).toFixed(1)}%</td><td>${stockLabel(item)}</td><td>${item.arrivedQty > 0 ? integer.format(item.arrivedQty) : '<b class="not-arrived">未到货</b>'}</td><td>${item.price ? yuan.format(item.price) : '-'}</td><td>${item.cost ? yuan.format(item.cost) : '-'}</td><td>${item.price && item.cost ? `${(item.price / item.cost).toFixed(2)}x` : '-'}</td><td><b>${yuan.format(item.stockValue)}</b></td><td>${item.topChannel || '-'}</td><td>${item.topChannelShare ? `${(item.topChannelShare * 100).toFixed(1)}%` : '0.0%'}</td><td><div class="table-share"><b>${pct(item.revenue, total)}</b><i style="width:${total ? item.revenue / total * 100 : 0}%"></i></div></td></tr>`;
     }).join('');
     $(id).innerHTML = list.length ? `<div class="sales-table-wrap"><table class="sales-table"><thead><tr><th title="款式主图">图片</th><th title="当前排序后的名次">排名</th>${sortHead('款号', 'code', 'autumn', '11 位色号编码。')}${sortHead('季节', 'season', 'autumn', '商品表中的年份季节。')}${sortHead('销售额', 'revenue', 'autumn', '已支付且剔除退款后的销售金额。')}${sortHead('净销量', 'qty', 'autumn', '已支付且未退款的商品数量。')}${sortHead('签收率', 'signedRate', 'autumn', '已签收数量除以净销量。')}${sortHead('库存', 'stock', 'autumn', '当前库存数量来自库存表。')}${sortHead('到仓数量', 'arrivedQty', 'autumn', '翻单明细中的到仓数量合计；为 0 时显示未到货。')}${sortHead('页面价', 'price', 'autumn', '订单文件的商品单价；多价格时取销量最多的价格。')}${sortHead('成本价', 'cost', 'autumn', '库存图片表中的成本价。')}${sortHead('倍率', 'cost', 'autumn', '页面价除以成本价。')}${sortHead('货值', 'stockValue', 'autumn', '当前库存乘以成本价。')}${sortHead('主要渠道', 'topChannel', 'autumn', '该款销售额最高的渠道。')}${sortHead('渠道占比', 'topChannelShare', 'autumn', '主要渠道销售额占该款销售额的比例。')}${sortHead('销售占比', 'revenue', 'autumn', '该款销售额占当前筛选结果总销售额的比例。')}</tr></thead><tbody>${rowsHtml}</tbody></table></div>${paginationControls('autumn', pageInfo, list.length, '款式')}` : '<p class="empty-state">当前筛选暂无款式数据</p>';
   };
@@ -467,6 +479,25 @@ function init() {
     if (event.target === imagePreview || event.target.closest('.image-preview-close')) imagePreview.close();
   });
   imagePreview.addEventListener('close', () => imagePreviewContent.removeAttribute('src'));
+  const productHover = $('#product-hover-card');
+  const hideProductHover = () => { productHover.classList.remove('visible'); productHover.setAttribute('aria-hidden', 'true'); };
+  const moveProductHover = event => {
+    const gap = 16, width = productHover.offsetWidth || 360, height = productHover.offsetHeight || 280;
+    const left = Math.min(window.innerWidth - width - 12, Math.max(12, event.clientX + gap));
+    const top = Math.min(window.innerHeight - height - 12, Math.max(12, event.clientY + gap));
+    productHover.style.left = `${left}px`; productHover.style.top = `${top}px`;
+  };
+  document.addEventListener('mouseover', event => {
+    const target = event.target.closest('[data-product-hover]');
+    if (!target || !state.data) return;
+    const item = products().get(target.dataset.productHover) || state.data.items.find(row => row.code === target.dataset.productHover);
+    if (!item) return;
+    productHover.innerHTML = productHoverMarkup(item); productHover.classList.add('visible'); productHover.setAttribute('aria-hidden', 'false'); moveProductHover(event);
+  });
+  document.addEventListener('mousemove', event => { if (event.target.closest('[data-product-hover]')) moveProductHover(event); });
+  document.addEventListener('mouseout', event => { const target = event.target.closest('[data-product-hover]'); if (target && !target.contains(event.relatedTarget)) hideProductHover(); });
+  document.addEventListener('focusin', event => { const target = event.target.closest('[data-product-hover]'); if (!target || !state.data) return; const item = products().get(target.dataset.productHover) || state.data.items.find(row => row.code === target.dataset.productHover); if (item) { productHover.innerHTML = productHoverMarkup(item); productHover.classList.add('visible'); productHover.setAttribute('aria-hidden', 'false'); const rect = target.getBoundingClientRect(); moveProductHover({ clientX: rect.right, clientY: rect.top }); } });
+  document.addEventListener('focusout', event => { if (event.target.closest('[data-product-hover]')) hideProductHover(); });
   document.addEventListener('click', event => {
     const control = event.target.closest('[data-list-page]');
     if (!control || control.disabled) return;

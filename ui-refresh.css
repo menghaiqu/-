@@ -864,6 +864,21 @@ main { padding: 30px 46px 62px; background: linear-gradient(180deg, #fbfdff 0, #
 .sales-table th, .reorder-table th { border-bottom-color: #d7e2f1; background: #f7f9fe; color: #52617b; }
 .sales-table td, .reorder-table td { border-bottom-color: #e3ebf5; color: #263650; }
 .sales-table tbody tr:hover, .reorder-table tbody tr:hover { background: #f5f8ff; }
+.sales-image[data-product-hover], .style-thumb[data-product-hover], .product-image[data-product-hover] { cursor: help; outline: none; }
+.sales-image[data-product-hover]:focus-visible, .style-thumb[data-product-hover]:focus-visible, .product-image[data-product-hover]:focus-visible { box-shadow: 0 0 0 3px rgba(54, 95, 196, .25); }
+.product-hover-card { position: fixed; z-index: 1000; width: min(380px, calc(100vw - 24px)); max-height: min(520px, calc(100vh - 24px)); overflow: auto; padding: 15px 16px; border: 1px solid #b9c9e4; border-radius: 10px; background: rgba(255,255,255,.98); box-shadow: 0 16px 36px rgba(28,55,97,.2); color: #1e365b; pointer-events: none; opacity: 0; transform: translateY(5px); transition: opacity .14s ease, transform .14s ease; }
+.product-hover-card.visible { opacity: 1; transform: translateY(0); }
+.product-hover-kicker { color: #506b92; font-size: 11px; letter-spacing: .04em; font-weight: 700; }
+.product-hover-title { display: block; margin-top: 5px; color: #102b58; font-size: 15px; line-height: 1.45; }
+.product-hover-tags { display: flex; flex-wrap: wrap; gap: 5px; margin: 9px 0 11px; }
+.product-hover-tags span { padding: 3px 7px; border-radius: 999px; background: #eef4ff; color: #49668e; font-size: 11px; }
+.product-hover-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 10px 0; border-top: 1px solid #e3ebf7; border-bottom: 1px solid #e3ebf7; }
+.product-hover-metrics span { color: #70839f; font-size: 11px; }
+.product-hover-metrics b { display: block; margin-top: 2px; color: #193b67; font-size: 12px; }
+.product-hover-copy { display: grid; gap: 8px; margin: 11px 0 0; }
+.product-hover-copy div { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 7px; align-items: start; }
+.product-hover-copy dt { color: #49698f; font-size: 11px; font-weight: 700; }
+.product-hover-copy dd { margin: 0; color: #304a6d; font-size: 12px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
 .sales-table td:nth-child(3), .sales-table td b, .reorder-table td b { color: #1c2d47; }
 .sort-control span { color: #525ad6; }
 .sort-control:hover { color: #3f49ba; }
