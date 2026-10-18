@@ -1,4 +1,4 @@
-const DATA_VERSION = '20261018-product-hover-4';
+const DATA_VERSION = '20261018-product-hover-5';
 const $ = selector => document.querySelector(selector);
 const yuan = new Intl.NumberFormat('zh-CN', { style: 'currency', currency: 'CNY', maximumFractionDigits: 0 });
 const integer = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 0 });
@@ -166,19 +166,22 @@ const generatedProductCopy = item => {
   const category = item.category || '单品';
   const season = item.season || '当季';
   const title = String(item.title || '');
+  const variant = [...String(item.code || title)].reduce((total, char) => total + char.charCodeAt(0), 0) % 4;
+  const feature = /条纹/.test(title) ? '条纹元素带来清晰的纵向节奏，视觉上更显修长' : /Polo|翻领/.test(title) ? 'Polo 翻领让领口更有精神，休闲里带一点利落感' : /老钱|高级/.test(title) ? '整体气质偏低调高级，细节克制但很有质感' : /显瘦|修身/.test(title) ? '线条收得恰到好处，显瘦但不会有紧绷束缚感' : /撞色|拼接/.test(title) ? '撞色或拼接细节增加层次，让基础款也有记忆点' : '设计简洁耐看，近看有细节，远看整体比例很干净';
   const winter = /冬|羽绒|棉衣|大衣|羊毛|保暖/.test(`${season}${title}`);
   const loose = /阔腿|宽松|廓形|直筒/.test(title);
-  const textile = /针织|毛衫/.test(category) ? '针织触感柔软亲肤，保暖但不显厚重，长时间穿着也舒服。' : winter ? '面料有挺括度和质感，兼顾保暖、舒适与日常打理，换季通勤都实用。' : '面料手感舒适，垂感和质感在线，穿起来利落又不拘束。';
+  const textile = /针织|毛衫/.test(category) ? '针织触感柔软亲肤，保暖但不显厚重，长时间穿着也舒服。' : winter ? '面料有挺括度和质感，兼顾保暖、舒适与日常打理，换季通勤都实用。' : ['面料手感细腻，垂感自然，贴身穿也不会觉得闷。', '面料有轻微筋骨感，上身不软塌，日常打理也省心。', '面料柔和有质感，穿起来轻盈，适合长时间通勤和出行。', '面料不靠夸张装饰取胜，靠触感和上身效果体现品质。'][variant];
   const shape = loose ? '宽松廓形给身体留出余量，藏住腰腹和腿部线条，走路自然有松弛感。' : '版型比例经过调整，线条干净、修饰身形，不挑身材也不容易过时。';
   const design = category.includes('裤') ? '裤型是重点：腰头平整、腿部线条顺，视觉上更显腿直，坐下和走动都自在。' : category.includes('裙') || category.includes('连衣') ? '裙身线条自然，长度和比例兼顾显高与活动方便，单穿就有完整造型。' : category.includes('外套') || category.includes('大衣') || category.includes('风衣') ? '肩颈和门襟细节让整件衣服更有精神，叠穿后不臃肿，室内外都好切换。' : '领口、袖口或门襟加入简洁设计点，打破基础款单调，近看更有细节。';
-  const sellingPoint = `核心卖点：${textile}\n版型优势：${shape}\n设计细节：${design}\n穿着感受：上身有型但不紧绷，坐、走、抬手都留有活动空间。\n适合人群：适合喜欢简洁质感、希望一件衣服兼顾通勤和日常的人群。`;
+  const scene = ['上班通勤、见客户和日常出门都能穿', '周末出街、旅行拍照和轻社交场景都合适', '换季时单穿或叠穿都实用，利用率很高', '喜欢少而精衣橱、希望一件衣服多场景穿的人会很适合'][variant];
+  const sellingPoint = `核心卖点：${textile}\n版型优势：${shape}\n设计细节：${design}\n标题特色：${feature}。\n穿着场景：${scene}。\n购买理由：不是只适合某一天的造型款，而是洗后、下班、周末都愿意反复穿的高频单品。`;
   const styling = category.includes('裤') ? '推荐上装选择短款针织、衬衫或合体小衫，把腰线露出来更显比例；鞋子搭乐福鞋、短靴或运动鞋，通勤、出街都能穿。'
     : category.includes('裙') || category.includes('连衣') ? '单穿配低跟鞋就是温柔通勤；天气凉时加短外套或针织开衫，配长靴能增加层次和气场。'
       : category.includes('外套') || category.includes('大衣') || category.includes('风衣') ? '内搭薄针织、衬衫或连衣裙，下装用直筒裤、半裙做简洁对比；同色系更高级，撞色更有记忆点。'
         : category.includes('衬衫') || category.includes('小衫') || category.includes('T恤') || category.includes('针织') || category.includes('毛衫') ? '单穿简洁有型，外面叠穿马甲、西装或风衣也不抢层次；下装搭直筒裤、阔腿裤或半裙都协调。'
           : category.includes('套装') ? '整套穿着省心利落，适合上班、见客户和日常出行；拆开后还能分别搭配基础款，一套衣服多种穿法。'
             : '搭配基础款下装和简洁鞋履，利用同色系或一深一浅的配色，整体干净又显气质。';
-  const script = `主播可以这样介绍：姐妹们看这款${category}，它是${season}非常实用的一件。先看面料，${textile}；再看版型，${shape}；细节上，${design}。\n\n搭配也很简单：${styling}\n\n所以它不是只能穿一次的“拍照款”，而是上班、出门、约会都能反复穿的高使用率单品。喜欢简约、有质感、穿着舒服的姐妹可以重点看，按平时尺码选择即可。`;
+  const script = `主播可以这样介绍：姐妹们看这款${category}，先别只看图片，它上身的重点是${feature}。面料方面，${textile}；版型方面，${shape}；${design}\n\n这件最值得买的地方是使用场景很广，${scene}。搭配不用重新买一套衣服，${styling}\n\n如果你平时喜欢${variant % 2 ? '有一点设计感、但又不想太夸张' : '简洁耐看、穿着舒服还要显气质'}的风格，这款可以重点留意。建议按照平时常穿尺码选择，想要更松弛的效果可以在详情尺码范围内选大一码。`;
   return { sellingPoint, styling, script };
 };
 const productHoverMarkup = item => {
