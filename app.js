@@ -1,4 +1,4 @@
-const DATA_VERSION = '20261018-product-card-copy-2';
+const DATA_VERSION = '20261019-aug-sep-orders-refresh-1';
 const $ = selector => document.querySelector(selector);
 const yuan = new Intl.NumberFormat('zh-CN', { style: 'currency', currency: 'CNY', maximumFractionDigits: 0 });
 const integer = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 0 });
