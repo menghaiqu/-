@@ -280,14 +280,14 @@ function renderProducts(items) {
 function filteredReorders() {
   const productByCode = products(), salesByCode = new Map(filteredItems().map(item => [item.code, item])), f = state.filters;
   return (state.data.reorders || []).filter(row => {
-    if (!isDashboardProduct(row.code) || !passesProductFilters(productByCode.get(row.code) || row, row)) return false;
+    if (!salesByCode.has(row.code) || !isDashboardProduct(row.code) || !passesProductFilters(productByCode.get(row.code) || row, row)) return false;
     const reorderDate = row.reorderDate || row.orderedAt || String(row.createdAt || '').slice(0, 10);
     return (f.period === 'all' || reorderDate.startsWith(f.period))
       && (!f.startDate || reorderDate >= f.startDate) && (!f.endDate || reorderDate <= f.endDate)
       && (f.status === 'all' || arrivalStatus(row.inboundQty) === f.status);
   }).map(row => {
     const item = salesByCode.get(row.code) || {};
-    const netQty = item.qty || 0, inboundQty = Number(row.inboundQty) || 0;
+    const netQty = sellThroughQty(item.arrivedQty, item.stock), inboundQty = Number(row.inboundQty) || 0;
     return { ...row, netQty, inboundQty, unarrivedQty: inboundQty === 0 ? '未到货' : integer.format(inboundQty), sellThrough: item.sellThrough || 0, multiple: row.price && row.cost ? row.price / row.cost : 0, remainingValue: (row.stock || 0) * (row.cost || 0) };
   }).sort((a, b) => compareSort(a, b, state.sort.reorders));
 }
@@ -333,7 +333,7 @@ function renderReorderOverview(rows) {
 function renderReorders() {
   const rows = filteredReorders(); renderReorderOverview(rows); const pageInfo = paginate(rows, 'reorders'); $('#reorder-count').textContent = `${rows.length} 个翻单批次`;
   const body = pageInfo.rows.map(row => `<tr><td class="table-image">${row.image ? `<img src="${row.image}" alt="${row.code}" loading="lazy">` : '-'}</td><td><b>${row.code}</b><small>${row.orderNo}</small></td><td>${row.brand}</td><td>${row.season || '-'}</td><td>${row.createdAt || '-'}</td><td>${row.deliveryDate || '-'}</td><td>${row.orderType || '翻单'}</td><td>${integer.format(row.reorderQty)}</td><td>${row.inboundQty === 0 ? '<b class="not-arrived">未到货</b>' : integer.format(row.inboundQty)}</td><td>${yuan.format(row.reorderValue)}</td><td>${integer.format(row.netQty)}</td><td>${(row.sellThrough * 100).toFixed(1)}%</td><td>${row.price ? yuan.format(row.price) : '-'}</td><td>${row.multiple ? `${row.multiple.toFixed(2)}x` : '-'}</td><td>${stockLabel(row)}</td><td>${yuan.format(row.remainingValue)}</td></tr>`).join('');
-  $('#reorder-list').innerHTML = rows.length ? `<div class="reorder-table-wrap"><table class="reorder-table"><thead><tr><th title="款式图片">图片</th>${sortHead('款号 / 订单', 'code', 'reorders', '11 位色号编码与采购订单号。')}${sortHead('品牌', 'brand', 'reorders', 'IHIMI。')}${sortHead('季节', 'season', 'reorders', '款式年份季节。')}${sortHead('创建时间', 'createdAt', 'reorders', '采购订单创建时间。')}${sortHead('计划交货日期', 'deliveryDate', 'reorders', '采购计划交货日期。')}${sortHead('订单类型', 'orderType', 'reorders', '首单、翻单等采购类型。')}${sortHead('翻单数量', 'reorderQty', 'reorders', '本采购批次的下单数量。')}${sortHead('未到货数量', 'inboundQty', 'reorders', '读取翻单表入库数量；为 0 时标记未到货。')}${sortHead('翻单货值', 'reorderValue', 'reorders', '采购订单货值。')}${sortHead('净销量', 'netQty', 'reorders', '对应款式已支付且未退款的销量。')}${sortHead('售罄率', 'sellThrough', 'reorders', '净销量除以翻单数量。')}${sortHead('页面价格', 'price', 'reorders', '订单记录中该色号最近成交日期的销售单价；同一天多个价格时取销量较多的价格。')}${sortHead('倍率', 'multiple', 'reorders', '页面价格除以成本价。')}${sortHead('当前库存', 'stock', 'reorders', '当前库存数量来自库存表。')}${sortHead('剩余货值', 'remainingValue', 'reorders', '当前库存乘以成本价。')}</tr></thead><tbody>${body}</tbody></table></div>${paginationControls('reorders', pageInfo, rows.length, '翻单批次')}` : '<p class="empty-state">当前筛选暂无成都自研翻单款</p>';
+  $('#reorder-list').innerHTML = rows.length ? `<div class="reorder-table-wrap"><table class="reorder-table"><thead><tr><th title="款式图片">图片</th>${sortHead('款号 / 订单', 'code', 'reorders', '11 位色号编码与采购订单号。')}${sortHead('品牌', 'brand', 'reorders', 'IHIMI。')}${sortHead('季节', 'season', 'reorders', '款式年份季节。')}${sortHead('创建时间', 'createdAt', 'reorders', '采购订单创建时间。')}${sortHead('计划交货日期', 'deliveryDate', 'reorders', '采购计划交货日期。')}${sortHead('订单类型', 'orderType', 'reorders', '首单、翻单等采购类型。')}${sortHead('翻单数量', 'reorderQty', 'reorders', '本采购批次的下单数量。')}${sortHead('未到货数量', 'inboundQty', 'reorders', '读取翻单表入库数量；为 0 时标记未到货。')}${sortHead('翻单货值', 'reorderValue', 'reorders', '采购订单货值。')}${sortHead('净销量', 'netQty', 'reorders', '同色号当前筛选采购批次的到货数量合计减当前库存，负数按 0 计；同色多批次显示同一色号净销量，不能逐行相加。')}${sortHead('售罄率', 'sellThrough', 'reorders', '同色号当前筛选批次（到货数量合计 − 当前库存）÷ 下单数量合计；负的已售量按 0 计。')}${sortHead('页面价格', 'price', 'reorders', '订单记录中该色号最近成交日期的销售单价；同一天多个价格时取销量较多的价格。')}${sortHead('倍率', 'multiple', 'reorders', '页面价格除以成本价。')}${sortHead('当前库存', 'stock', 'reorders', '当前库存数量来自库存表。')}${sortHead('剩余货值', 'remainingValue', 'reorders', '当前库存乘以成本价。')}</tr></thead><tbody>${body}</tbody></table></div>${paginationControls('reorders', pageInfo, rows.length, '翻单批次')}` : '<p class="empty-state">当前筛选暂无成都自研翻单款</p>';
 }
 function renderChengduScreen() {
   const sales = itemMap(), grouped = new Map(); filteredReorders().forEach(row => { const item = sales.get(row.code) || {}; const target = grouped.get(row.code) || { ...row, reorderQty: 0, arrivedQty: 0, reorderValue: 0, netQty: item.qty || 0, revenue: item.revenue || 0, signedQty: item.signedQty || 0, paidQty: item.paidQty || 0 }; target.reorderQty += row.reorderQty; target.arrivedQty += Number(row.arrivedQty) || 0; target.reorderValue += row.reorderValue; grouped.set(row.code, target); });
@@ -346,7 +346,7 @@ function renderChengduScreen() {
   const multiple = multipleBase.reduce((total, item) => total + item.price * (pricedWithSales.length ? item.qty : 1), 0)
     / (multipleBase.reduce((total, item) => total + item.cost * (pricedWithSales.length ? item.qty : 1), 0) || 1);
   $('#chengdu-screen-count').textContent = `${rows.length} 个成都自研翻单款`;
-  const metrics = [['翻单货值', yuan.format(reorderValue), '采购订单货值', '采购表中的翻单货值合计。'], ['剩余货值', yuan.format(stockValue), '当前库存 × 成本', '当前库存数量乘以成本价。'], ['销售额', yuan.format(salesAmount), '去退款后', '对应翻单款的已支付销售额，已剔除退款。'], ['翻单款数', integer.format(rows.length), '按款号去重', '有采购翻单记录的成都自研 11 位色号数量。'], ['净销量', integer.format(netQty), '件', '对应翻单款已支付且未退款的销量。'], ['售罄率', `${(reorderQty ? soldFromStock / reorderQty * 100 : 0).toFixed(1)}%`, '（到货数量 - 库存）/ 翻单数量', '先用到货数量减去当前库存得到净销量，再除以当前筛选范围的翻单数量。'], ['签收率', `${(paidQty ? signedQty / paidQty * 100 : 0).toFixed(1)}%`, '按支付件数', '当前筛选范围内，未退款且已确认收货或交易成功的件数除以全部已支付件数。'], ['倍率', priced.length ? `${multiple.toFixed(2)}倍` : '-', '页面价 / 成本', pricedWithSales.length ? '当前筛选范围内，按净销量加权的页面价除以成本价。' : '当前范围没有销量，按已录入页面价与成本的款式平均计算。'], ['库存数量', integer.format(stockQty), '真实已到货库存', '仅统计已到货的成都自研款库存；未到货款不计入。']];
+  const metrics = [['翻单货值', yuan.format(reorderValue), '采购订单货值', '采购表中的翻单货值合计。'], ['剩余货值', yuan.format(stockValue), '当前库存 × 成本', '当前库存数量乘以成本价。'], ['销售额', yuan.format(salesAmount), '去退款后', '对应翻单款的已支付销售额，已剔除退款。'], ['翻单款数', integer.format(rows.length), '按款号去重', '有采购翻单记录的成都自研 11 位色号数量。'], ['净销量', integer.format(soldFromStock), '到货数量 - 库存', '按色号汇总当前筛选采购批次的到货数量，减当前库存；每色库存只扣一次，负数按 0 计。'], ['售罄率', `${(reorderQty ? soldFromStock / reorderQty * 100 : 0).toFixed(1)}%`, '（到货数量 - 库存）/ 翻单数量', '按色号汇总当前筛选批次到货数量减当前库存（负数按 0 计），再汇总除以筛选批次下单数量；库存每色只扣一次。日期按采购时间筛选，库存是当前快照；渠道和主播仅筛选对应商品，不拆分库存。'], ['签收率', `${(paidQty ? signedQty / paidQty * 100 : 0).toFixed(1)}%`, '按支付件数', '当前筛选范围内，未退款且已确认收货或交易成功的件数除以全部已支付件数。'], ['倍率', priced.length ? `${multiple.toFixed(2)}倍` : '-', '页面价 / 成本', pricedWithSales.length ? '当前筛选范围内，按净销量加权的页面价除以成本价。' : '当前范围没有销量，按已录入页面价与成本的款式平均计算。'], ['库存数量', integer.format(stockQty), '真实已到货库存', '仅统计已到货的成都自研款库存；未到货款不计入。']];
   $('#chengdu-metrics').innerHTML = metrics.map(row => `<article class="metric has-tip" data-tip="${row[3]}"><p>${row[0]}</p><strong>${row[1]}</strong><span>${row[2]}</span></article>`).join('');
   renderChengduCharts(stockItems);
 }
@@ -443,7 +443,7 @@ function downloadTable() {
   const imageUrl = image => image ? new URL(image, location.href).href : '';
   const head = isReorders
     ? ['图片链接', '色号编码', '订单号', '品牌', '季节', '创建时间', '计划交货日期', '订单类型', '翻单数量', '未到货数量', '翻单货值', '净销量', '售罄率', '页面价格', '成本价', '倍率', '当前库存', '剩余货值']
-    : ['图片链接', '色号编码', '季节', '品类', '商品标签', '销售额', '净销量', '签收率（按支付件数）', '售罄率（净销量÷翻单数量）', '库存', '页面价格', '成本价', '倍率', '货值', `最近7天销量${recentRange.start ? `（${recentRange.start}至${recentRange.end}）` : ''}`, '主要渠道', '渠道占比'];
+    : ['图片链接', '色号编码', '季节', '品类', '商品标签', '销售额', '净销量', '签收率（按支付件数）', '售罄率（到货数量减库存后÷翻单数量）', '库存', '页面价格', '成本价', '倍率', '货值', `最近7天销量${recentRange.start ? `（${recentRange.start}至${recentRange.end}）` : ''}`, '主要渠道', '渠道占比'];
   const data = rows.map(row => isReorders
     ? [imageUrl(row.image), row.code, row.orderNo, row.brand, row.season || '', row.createdAt || '', row.deliveryDate || '', row.orderType || '翻单', row.reorderQty, row.inboundQty === 0 ? '未到货' : row.inboundQty, row.reorderValue, row.netQty, `${(row.sellThrough * 100).toFixed(1)}%`, row.price || '', row.cost || '', row.multiple ? `${row.multiple.toFixed(2)}x` : '', row.stock || 0, row.remainingValue]
     : [imageUrl(row.image), row.code, row.season || '', row.category || '', row.productTag || '未设置', row.revenue, row.qty, `${(row.signedRate * 100).toFixed(1)}%`, sellThroughLabel(row), row.stock || 0, row.price || '', row.cost || '', row.price && row.cost ? `${(row.price / row.cost).toFixed(2)}x` : '', row.stockValue, row.recent7Qty || 0, row.topChannel || '', `${(row.topChannelShare * 100).toFixed(1)}%`]);
@@ -469,10 +469,12 @@ async function download() {
     const totalStockValue = sum(items, 'stockValue');
     const totalReorderValue = sum(reorders, 'reorderValue');
     const totalReorderQty = sum(reorders, 'reorderQty');
+    const soldByCode = new Map(reorders.map(row => [row.code, row.netQty]));
+    const totalReorderSold = [...soldByCode.values()].reduce((total, qty) => total + qty, 0);
     const totalQty = sum(items, 'qty');
     const totalPaidQty = sum(items, 'paidQty');
     const metricRows = isReorders
-      ? [['翻单批次', integer.format(reorders.length)], ['翻单数量', integer.format(totalReorderQty)], ['翻单货值', yuan.format(totalReorderValue)], ['净销量', integer.format(sum(reorders, 'netQty'))], ['售罄率', `${(totalReorderQty ? sum(reorders, 'netQty') / totalReorderQty * 100 : 0).toFixed(1)}%`], ['剩余货值', yuan.format(sum(reorders, 'remainingValue'))]]
+      ? [['翻单批次', integer.format(reorders.length)], ['翻单数量', integer.format(totalReorderQty)], ['翻单货值', yuan.format(totalReorderValue)], ['净销量', integer.format(totalReorderSold)], ['售罄率', `${(totalReorderQty ? totalReorderSold / totalReorderQty * 100 : 0).toFixed(1)}%`], ['剩余货值', yuan.format(sum(reorders, 'remainingValue'))]]
       : [['销售额', yuan.format(totalRevenue)], ['净销量', integer.format(totalQty)], ['库存数量', integer.format(sum(items, 'stock'))], ['库存货值', yuan.format(totalStockValue)], ['签收率', `${(totalPaidQty ? sum(items, 'signedQty') / totalPaidQty * 100 : 0).toFixed(1)}%`], ['翻单货值', yuan.format(totalReorderValue)]];
     const seasonal = [['C', '26年春款'], ['X', '26年夏款'], ['Q', '26年秋款'], ['D', '26年冬款']].map(([marker, name]) => ({ name, value: items.filter(item => item.code?.startsWith('I6') && item.code[2] === marker).reduce((total, item) => total + item.stockValue, 0) }));
     const grouped = (key) => [...items.reduce((map, item) => { const name = key(item) || '未分类'; map.set(name, (map.get(name) || 0) + item.stockValue); return map; }, new Map())].map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value);
