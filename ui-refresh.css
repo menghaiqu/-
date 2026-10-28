@@ -864,10 +864,13 @@ main { padding: 30px 46px 62px; background: linear-gradient(180deg, #fbfdff 0, #
 .sales-table th, .reorder-table th { border-bottom-color: #d7e2f1; background: #f7f9fe; color: #52617b; }
 .sales-table td, .reorder-table td { border-bottom-color: #e3ebf5; color: #263650; }
 .sales-table tbody tr:hover, .reorder-table tbody tr:hover { background: #f5f8ff; }
-.sales-image[data-product-hover], .style-thumb[data-product-hover], .product-image[data-product-hover] { cursor: help; outline: none; }
-.sales-image[data-product-hover]:focus-visible, .style-thumb[data-product-hover]:focus-visible, .product-image[data-product-hover]:focus-visible { box-shadow: 0 0 0 3px rgba(54, 95, 196, .25); }
+.product-rank-trigger { display: inline-grid; place-items: center; width: 34px; height: 30px; padding: 0; border: 0; border-radius: 5px; background: transparent; color: inherit; font: inherit; font-weight: 700; cursor: pointer; }
+.product-rank-trigger:hover, .product-rank-trigger[aria-expanded="true"] { background: #eaf0ff; color: #3949ab; }
+.product-rank-trigger:focus-visible { outline: 2px solid #5265d5; outline-offset: 1px; }
 .product-hover-card { position: fixed; z-index: 1000; width: min(520px, calc(100vw - 24px)); max-height: min(680px, calc(100vh - 24px)); overflow: auto; padding: 19px 20px; border: 1px solid #a9bedf; border-radius: 12px; background: rgba(255,255,255,.995); box-shadow: 0 18px 42px rgba(28,55,97,.24); color: #1e365b; pointer-events: auto; opacity: 0; transform: translateY(5px); transition: opacity .14s ease, transform .14s ease; }
 .product-hover-card.visible { opacity: 1; transform: translateY(0); }
+.product-hover-close { position: sticky; float: right; top: 0; display: grid; place-items: center; width: 30px; height: 30px; margin: -8px -8px 0 8px; border: 0; border-radius: 5px; background: transparent; color: #52617b; font-size: 22px; cursor: pointer; }
+.product-hover-close:hover { background: #edf2fa; color: #1e365b; }
 .product-hover-kicker { color: #506b92; font-size: 11px; letter-spacing: .04em; font-weight: 700; }
 .product-hover-title { display: block; margin-top: 5px; color: #102b58; font-size: 15px; line-height: 1.45; }
 .product-hover-tags { display: flex; flex-wrap: wrap; gap: 5px; margin: 9px 0 11px; }

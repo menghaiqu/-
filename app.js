@@ -1,4 +1,4 @@
-const DATA_VERSION = '20261028-data-refresh-1';
+const DATA_VERSION = '20261028-latest-price-recent7-1';
 const $ = selector => document.querySelector(selector);
 const yuan = new Intl.NumberFormat('zh-CN', { style: 'currency', currency: 'CNY', maximumFractionDigits: 0 });
 const integer = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 0 });
@@ -104,6 +104,12 @@ function paidOrders() {
   });
 }
 function activeOrders() { return paidOrders().filter(order => !order.refunded); }
+function latestSevenDayRange(orders = activeOrders()) {
+  const end = orders.reduce((latest, order) => order.date > latest ? order.date : latest, '');
+  if (!end) return { start: '', end: '' };
+  const [year, month, day] = end.split('-').map(Number);
+  return { start: new Date(Date.UTC(year, month - 1, day - 6)).toISOString().slice(0, 10), end };
+}
 function stateTag(item) {
   if (item.reordered) return 'reordered';
   const perDay = item.days ? item.qty / item.days : 0;
@@ -113,6 +119,7 @@ function stateTag(item) {
 }
 function filteredItems() {
   const productByCode = products(), groups = new Map(), reordered = new Set((state.data.reorders || []).map(row => row.code));
+  const orders = activeOrders(), recentRange = latestSevenDayRange(orders);
   const arrivedByCode = new Map();
   const reorderQtyByCode = new Map();
   (state.data.reorders || []).forEach(row => {
@@ -121,14 +128,15 @@ function filteredItems() {
   });
   const paidByCode = new Map();
   paidOrders().forEach(order => paidByCode.set(order.code, (paidByCode.get(order.code) || 0) + order.qty));
-  activeOrders().forEach(order => {
-    const row = groups.get(order.code) || { qty: 0, revenue: 0, signedQty: 0, channels: new Map(), dates: new Set(), title: '' };
+  orders.forEach(order => {
+    const row = groups.get(order.code) || { qty: 0, recent7Qty: 0, revenue: 0, signedQty: 0, channels: new Map(), dates: new Set(), title: '' };
     row.qty += order.qty; row.revenue += order.revenue; row.signedQty += order.signed ? order.qty : 0;
+    if (recentRange.start && order.date >= recentRange.start && order.date <= recentRange.end) row.recent7Qty += order.qty;
     row.channels.set(order.channel, (row.channels.get(order.channel) || 0) + order.revenue); row.dates.add(order.date); row.title ||= order.title; groups.set(order.code, row);
   });
   const codes = [...productByCode.keys()];
   return codes.map(code => {
-    const metrics = groups.get(code) || { qty: 0, revenue: 0, signedQty: 0, channels: new Map(), dates: new Set(), title: '' };
+    const metrics = groups.get(code) || { qty: 0, recent7Qty: 0, revenue: 0, signedQty: 0, channels: new Map(), dates: new Set(), title: '' };
     const top = [...metrics.channels].sort((a, b) => b[1] - a[1])[0];
     const product = productByCode.get(code) || { code, brand: '其它品牌', season: '未标注', category: '未分类', cost: 0, price: 0, stock: 0 };
     const paidQty = paidByCode.get(code) || 0;
@@ -227,13 +235,13 @@ const productHoverMarkup = item => {
   const audience = cardCopy ? copyList(cardCopy.audience, '') : '';
   const wearingLogic = cardCopy ? copyList(cardCopy.wearingLogic, '') : '';
   const extra = `${audience ? `<div><dt>适合人群</dt><dd>${escapeHtml(audience)}</dd></div>` : ''}${wearingLogic ? `<div><dt>穿着逻辑</dt><dd>${escapeHtml(wearingLogic)}</dd></div>` : ''}`;
-  return `<div class="product-hover-kicker">${escapeHtml(item.code || '')}</div><strong class="product-hover-title">${escapeHtml(title)}</strong><div class="product-hover-tags"><span>${escapeHtml(item.season || '未标注')}</span><span>${escapeHtml(item.category || '未分类')}</span></div><div class="product-hover-metrics"><span>销售额<b>${yuan.format(item.revenue || 0)}</b></span><span>净销量<b>${integer.format(item.qty || 0)}</b></span><span>库存<b>${stockLabel(item)}</b></span><span>成本价<b>${item.cost ? yuan.format(item.cost) : '-'}</b></span><span>页面价<b>${item.price ? yuan.format(item.price) : '-'}</b></span><span>倍率<b>${item.price && item.cost ? `${(item.price / item.cost).toFixed(2)}x` : '-'}</b></span></div><dl class="product-hover-copy">${positioning}<div><dt>卖点</dt><dd>${escapeHtml(sellingPoint)}</dd></div><div><dt>搭配方式</dt><dd>${escapeHtml(styling)}</dd></div>${extra}<div><dt>主播话术</dt><dd>${escapeHtml(script)}</dd></div></dl>`;
+  return `<button class="product-hover-close" type="button" aria-label="关闭话术">×</button><div class="product-hover-kicker">${escapeHtml(item.code || '')}</div><strong class="product-hover-title">${escapeHtml(title)}</strong><div class="product-hover-tags"><span>${escapeHtml(item.season || '未标注')}</span><span>${escapeHtml(item.category || '未分类')}</span></div><div class="product-hover-metrics"><span>销售额<b>${yuan.format(item.revenue || 0)}</b></span><span>净销量<b>${integer.format(item.qty || 0)}</b></span><span>库存<b>${stockLabel(item)}</b></span><span>成本价<b>${item.cost ? yuan.format(item.cost) : '-'}</b></span><span>页面价<b>${item.price ? yuan.format(item.price) : '-'}</b></span><span>倍率<b>${item.price && item.cost ? `${(item.price / item.cost).toFixed(2)}x` : '-'}</b></span></div><dl class="product-hover-copy">${positioning}<div><dt>卖点</dt><dd>${escapeHtml(sellingPoint)}</dd></div><div><dt>搭配方式</dt><dd>${escapeHtml(styling)}</dd></div>${extra}<div><dt>主播话术</dt><dd>${escapeHtml(script)}</dd></div></dl>`;
 };
 const hoverAttr = item => `data-product-hover="${escapeHtml(item.code || '')}" tabindex="0"`;
 function productCard(item, index, total, label) {
   const tag = item.status === 'tested' ? '已测' : item.status === 'mounted' ? '挂车' : item.status === 'reordered' ? '已翻' : '观察中';
   const tagClass = item.status === 'tested' ? 'tested' : item.status === 'mounted' ? 'mounted' : 'watching';
-  return `<article class="style-row"><span class="rank-number">${index + 1}</span><div class="style-thumb" ${hoverAttr(item)}>${item.image ? `<img src="${item.image}" alt="${item.code}" loading="lazy" decoding="async">` : '<span>待同步</span>'}</div><div class="style-main"><div class="style-code-line"><strong>${item.code}</strong><span class="test-tag ${tagClass}">${tag}</span></div><div class="style-meta"><span>销售额 <b>${yuan.format(item.revenue)}</b></span><span>销量 <b>${integer.format(item.qty)}</b></span><span>库存 <b>${integer.format(item.stock || 0)}</b></span><span>签收率 <b>${(item.signedRate * 100).toFixed(1)}%</b></span><span>页面价 <b>${item.price ? yuan.format(item.price) : '-'}</b></span><span>倍率 <b>${item.price && item.cost ? `${(item.price / item.cost).toFixed(2)}x` : '-'}</b></span></div><div class="style-share-area"><div class="style-share-caption"><span>${label}</span><b>${pct(item.revenue, total)}</b></div><div class="style-share"><i style="width:${total ? item.revenue / total * 100 : 0}%"></i></div></div></div></article>`;
+  return `<article class="style-row"><span class="rank-number">${index + 1}</span><div class="style-thumb">${item.image ? `<img src="${item.image}" alt="${item.code}" loading="lazy" decoding="async">` : '<span>待同步</span>'}</div><div class="style-main"><div class="style-code-line"><strong>${item.code}</strong><span class="test-tag ${tagClass}">${tag}</span></div><div class="style-meta"><span>销售额 <b>${yuan.format(item.revenue)}</b></span><span>销量 <b>${integer.format(item.qty)}</b></span><span>库存 <b>${integer.format(item.stock || 0)}</b></span><span>签收率 <b>${(item.signedRate * 100).toFixed(1)}%</b></span><span>页面价 <b>${item.price ? yuan.format(item.price) : '-'}</b></span><span>倍率 <b>${item.price && item.cost ? `${(item.price / item.cost).toFixed(2)}x` : '-'}</b></span></div><div class="style-share-area"><div class="style-share-caption"><span>${label}</span><b>${pct(item.revenue, total)}</b></div><div class="style-share"><i style="width:${total ? item.revenue / total * 100 : 0}%"></i></div></div></div></article>`;
 }
 function renderProducts(items) {
   const rows = items;
@@ -249,9 +257,11 @@ function renderProducts(items) {
     const rowsHtml = pageInfo.rows.map((item, index) => {
       const tag = item.status === 'tested' ? '已测' : item.status === 'mounted' ? '挂车' : item.status === 'reordered' ? '已翻' : '观察中';
       const tagClass = item.status === 'tested' ? 'tested' : item.status === 'mounted' ? 'mounted' : 'watching';
-      return `<tr><td class="sales-image" ${hoverAttr(item)}>${item.image ? `<img src="${item.image}" alt="${item.code}" loading="lazy" decoding="async">` : '-'}</td><td><b>${pageInfo.start + index + 1}</b></td><td><strong>${item.code}</strong></td><td>${item.season || '-'}</td><td><b>${yuan.format(item.revenue)}</b></td><td><b>${integer.format(item.qty)}</b></td><td>${(item.signedRate * 100).toFixed(1)}%</td><td>${sellThroughLabel(item)}</td><td>${stockLabel(item)}</td><td>${item.arrivedQty > 0 ? integer.format(item.arrivedQty) : '<b class="not-arrived">未到货</b>'}</td><td>${item.price ? yuan.format(item.price) : '-'}</td><td>${item.cost ? yuan.format(item.cost) : '-'}</td><td>${item.price && item.cost ? `${(item.price / item.cost).toFixed(2)}x` : '-'}</td><td><b>${yuan.format(item.stockValue)}</b></td><td>${item.topChannel || '-'}</td><td>${item.topChannelShare ? `${(item.topChannelShare * 100).toFixed(1)}%` : '0.0%'}</td><td><div class="table-share"><b>${pct(item.revenue, total)}</b><i style="width:${total ? item.revenue / total * 100 : 0}%"></i></div></td></tr>`;
+      return `<tr><td class="sales-image">${item.image ? `<img src="${item.image}" alt="${item.code}" loading="lazy" decoding="async">` : '-'}</td><td><button class="product-rank-trigger" type="button" ${hoverAttr(item)} aria-haspopup="dialog" aria-expanded="false" title="点击查看款式话术">${pageInfo.start + index + 1}</button></td><td><strong>${item.code}</strong></td><td>${item.season || '-'}</td><td><b>${yuan.format(item.revenue)}</b></td><td><b>${integer.format(item.qty)}</b></td><td>${(item.signedRate * 100).toFixed(1)}%</td><td>${sellThroughLabel(item)}</td><td>${stockLabel(item)}</td><td>${item.price ? yuan.format(item.price) : '-'}</td><td>${item.cost ? yuan.format(item.cost) : '-'}</td><td>${item.price && item.cost ? `${(item.price / item.cost).toFixed(2)}x` : '-'}</td><td><b>${yuan.format(item.stockValue)}</b></td><td>${integer.format(item.recent7Qty || 0)}</td><td>${item.topChannel || '-'}</td><td>${item.topChannelShare ? `${(item.topChannelShare * 100).toFixed(1)}%` : '0.0%'}</td><td><div class="table-share"><b>${pct(item.revenue, total)}</b><i style="width:${total ? item.revenue / total * 100 : 0}%"></i></div></td></tr>`;
     }).join('');
-    $(id).innerHTML = list.length ? `<div class="sales-table-wrap"><table class="sales-table"><thead><tr><th title="款式主图">图片</th><th title="当前排序后的名次">排名</th>${sortHead('款号', 'code', 'autumn', '11 位色号编码。')}${sortHead('季节', 'season', 'autumn', '商品表中的年份季节。')}${sortHead('销售额', 'revenue', 'autumn', '已支付且剔除退款后的销售金额。')}${sortHead('净销量', 'qty', 'autumn', '已支付且未退款的商品数量。')}${sortHead('签收率', 'signedRate', 'autumn', '未退款且已签收件数除以全部已支付件数；快手交易成功按已签收计。')}${sortHead('售罄率', 'sellThrough', 'autumn', '当前筛选净销量除以该 11 位色号全部采购批次的下单数量合计；没有下单数量时显示短横线。')}${sortHead('库存', 'stock', 'autumn', '当前库存数量来自库存表。')}${sortHead('到仓数量', 'arrivedQty', 'autumn', '翻单明细中的到仓数量合计；为 0 时显示未到货。')}${sortHead('页面价', 'price', 'autumn', '订单文件的商品单价；多价格时取销量最多的价格。')}${sortHead('成本价', 'cost', 'autumn', '库存图片表中的成本价。')}${sortHead('倍率', 'cost', 'autumn', '页面价除以成本价。')}${sortHead('货值', 'stockValue', 'autumn', '当前库存乘以成本价。')}${sortHead('主要渠道', 'topChannel', 'autumn', '该款销售额最高的渠道。')}${sortHead('渠道占比', 'topChannelShare', 'autumn', '主要渠道销售额占该款销售额的比例。')}${sortHead('销售占比', 'revenue', 'autumn', '该款销售额占当前筛选结果总销售额的比例。')}</tr></thead><tbody>${rowsHtml}</tbody></table></div>${paginationControls('autumn', pageInfo, list.length, '款式')}` : '<p class="empty-state">当前筛选暂无款式数据</p>';
+    const recentRange = latestSevenDayRange();
+    const recentTip = recentRange.start ? `最近 7 天净销量（${recentRange.start} 至 ${recentRange.end}，按当前筛选且剔除退款）。` : '最近 7 天净销量；当前筛选范围没有有效成交日期。';
+    $(id).innerHTML = list.length ? `<div class="sales-table-wrap"><table class="sales-table"><thead><tr><th title="款式主图">图片</th><th title="当前排序后的名次">排名</th>${sortHead('款号', 'code', 'autumn', '11 位色号编码。')}${sortHead('季节', 'season', 'autumn', '商品表中的年份季节。')}${sortHead('销售额', 'revenue', 'autumn', '已支付且剔除退款后的销售金额。')}${sortHead('净销量', 'qty', 'autumn', '已支付且未退款的商品数量。')}${sortHead('签收率', 'signedRate', 'autumn', '未退款且已签收件数除以全部已支付件数；快手交易成功按已签收计。')}${sortHead('售罄率', 'sellThrough', 'autumn', '当前筛选净销量除以该 11 位色号全部采购批次的下单数量合计；没有下单数量时显示短横线。')}${sortHead('库存', 'stock', 'autumn', '当前库存数量来自库存表。')}${sortHead('页面价', 'price', 'autumn', '订单记录中该色号最近成交日期的销售单价；同一天有多个价格时取销量较多的价格。')}${sortHead('成本价', 'cost', 'autumn', '库存图片表中的成本价。')}${sortHead('倍率', 'cost', 'autumn', '页面价除以成本价。')}${sortHead('货值', 'stockValue', 'autumn', '当前库存乘以成本价。')}${sortHead('最近7天销量', 'recent7Qty', 'autumn', recentTip)}${sortHead('主要渠道', 'topChannel', 'autumn', '该款销售额最高的渠道。')}${sortHead('渠道占比', 'topChannelShare', 'autumn', '主要渠道销售额占该款销售额的比例。')}${sortHead('销售占比', 'revenue', 'autumn', '该款销售额占当前筛选结果总销售额的比例。')}</tr></thead><tbody>${rowsHtml}</tbody></table></div>${paginationControls('autumn', pageInfo, list.length, '款式')}` : '<p class="empty-state">当前筛选暂无款式数据</p>';
   };
   if (state.page === 'products') grid('#products-grid', items.slice(0, 100), 'TOP 100 销售占比', 'products');
   if (state.page === 'autumn') table('#autumn-grid', rows);
@@ -312,7 +322,7 @@ function renderReorderOverview(rows) {
 function renderReorders() {
   const rows = filteredReorders(); renderReorderOverview(rows); const pageInfo = paginate(rows, 'reorders'); $('#reorder-count').textContent = `${rows.length} 个翻单批次`;
   const body = pageInfo.rows.map(row => `<tr><td class="table-image">${row.image ? `<img src="${row.image}" alt="${row.code}" loading="lazy">` : '-'}</td><td><b>${row.code}</b><small>${row.orderNo}</small></td><td>${row.brand}</td><td>${row.season || '-'}</td><td>${row.createdAt || '-'}</td><td>${row.deliveryDate || '-'}</td><td>${row.orderType || '翻单'}</td><td>${integer.format(row.reorderQty)}</td><td>${row.inboundQty === 0 ? '<b class="not-arrived">未到货</b>' : integer.format(row.inboundQty)}</td><td>${yuan.format(row.reorderValue)}</td><td>${integer.format(row.netQty)}</td><td>${(row.sellThrough * 100).toFixed(1)}%</td><td>${row.price ? yuan.format(row.price) : '-'}</td><td>${row.multiple ? `${row.multiple.toFixed(2)}x` : '-'}</td><td>${stockLabel(row)}</td><td>${yuan.format(row.remainingValue)}</td></tr>`).join('');
-  $('#reorder-list').innerHTML = rows.length ? `<div class="reorder-table-wrap"><table class="reorder-table"><thead><tr><th title="款式图片">图片</th>${sortHead('款号 / 订单', 'code', 'reorders', '11 位色号编码与采购订单号。')}${sortHead('品牌', 'brand', 'reorders', 'IHIMI。')}${sortHead('季节', 'season', 'reorders', '款式年份季节。')}${sortHead('创建时间', 'createdAt', 'reorders', '采购订单创建时间。')}${sortHead('计划交货日期', 'deliveryDate', 'reorders', '采购计划交货日期。')}${sortHead('订单类型', 'orderType', 'reorders', '首单、翻单等采购类型。')}${sortHead('翻单数量', 'reorderQty', 'reorders', '本采购批次的下单数量。')}${sortHead('未到货数量', 'inboundQty', 'reorders', '读取翻单表入库数量；为 0 时标记未到货。')}${sortHead('翻单货值', 'reorderValue', 'reorders', '采购订单货值。')}${sortHead('净销量', 'netQty', 'reorders', '对应款式已支付且未退款的销量。')}${sortHead('售罄率', 'sellThrough', 'reorders', '净销量除以翻单数量。')}${sortHead('页面价格', 'price', 'reorders', '订单文件的商品单价；多价格时取销量最多的价格。')}${sortHead('倍率', 'multiple', 'reorders', '页面价格除以成本价。')}${sortHead('当前库存', 'stock', 'reorders', '当前库存数量来自库存表。')}${sortHead('剩余货值', 'remainingValue', 'reorders', '当前库存乘以成本价。')}</tr></thead><tbody>${body}</tbody></table></div>${paginationControls('reorders', pageInfo, rows.length, '翻单批次')}` : '<p class="empty-state">当前筛选暂无成都自研翻单款</p>';
+  $('#reorder-list').innerHTML = rows.length ? `<div class="reorder-table-wrap"><table class="reorder-table"><thead><tr><th title="款式图片">图片</th>${sortHead('款号 / 订单', 'code', 'reorders', '11 位色号编码与采购订单号。')}${sortHead('品牌', 'brand', 'reorders', 'IHIMI。')}${sortHead('季节', 'season', 'reorders', '款式年份季节。')}${sortHead('创建时间', 'createdAt', 'reorders', '采购订单创建时间。')}${sortHead('计划交货日期', 'deliveryDate', 'reorders', '采购计划交货日期。')}${sortHead('订单类型', 'orderType', 'reorders', '首单、翻单等采购类型。')}${sortHead('翻单数量', 'reorderQty', 'reorders', '本采购批次的下单数量。')}${sortHead('未到货数量', 'inboundQty', 'reorders', '读取翻单表入库数量；为 0 时标记未到货。')}${sortHead('翻单货值', 'reorderValue', 'reorders', '采购订单货值。')}${sortHead('净销量', 'netQty', 'reorders', '对应款式已支付且未退款的销量。')}${sortHead('售罄率', 'sellThrough', 'reorders', '净销量除以翻单数量。')}${sortHead('页面价格', 'price', 'reorders', '订单记录中该色号最近成交日期的销售单价；同一天多个价格时取销量较多的价格。')}${sortHead('倍率', 'multiple', 'reorders', '页面价格除以成本价。')}${sortHead('当前库存', 'stock', 'reorders', '当前库存数量来自库存表。')}${sortHead('剩余货值', 'remainingValue', 'reorders', '当前库存乘以成本价。')}</tr></thead><tbody>${body}</tbody></table></div>${paginationControls('reorders', pageInfo, rows.length, '翻单批次')}` : '<p class="empty-state">当前筛选暂无成都自研翻单款</p>';
 }
 function renderChengduScreen() {
   const sales = itemMap(), grouped = new Map(); filteredReorders().forEach(row => { const item = sales.get(row.code) || {}; const target = grouped.get(row.code) || { ...row, reorderQty: 0, reorderValue: 0, netQty: item.qty || 0, revenue: item.revenue || 0, signedQty: item.signedQty || 0, paidQty: item.paidQty || 0 }; target.reorderQty += row.reorderQty; target.reorderValue += row.reorderValue; grouped.set(row.code, target); });
@@ -418,13 +428,14 @@ function saveHtmlReport(filename, html) {
 function downloadTable() {
   const isReorders = state.page === 'reorders';
   const rows = isReorders ? filteredReorders() : filteredItems();
+  const recentRange = latestSevenDayRange();
   const imageUrl = image => image ? new URL(image, location.href).href : '';
   const head = isReorders
     ? ['图片链接', '色号编码', '订单号', '品牌', '季节', '创建时间', '计划交货日期', '订单类型', '翻单数量', '未到货数量', '翻单货值', '净销量', '售罄率', '页面价格', '成本价', '倍率', '当前库存', '剩余货值']
-    : ['图片链接', '色号编码', '季节', '品类', '商品标签', '销售额', '净销量', '签收率（按支付件数）', '售罄率（净销量÷翻单数量）', '库存', '到仓数量', '页面价格', '成本价', '倍率', '货值', '主要渠道', '渠道占比'];
+    : ['图片链接', '色号编码', '季节', '品类', '商品标签', '销售额', '净销量', '签收率（按支付件数）', '售罄率（净销量÷翻单数量）', '库存', '页面价格', '成本价', '倍率', '货值', `最近7天销量${recentRange.start ? `（${recentRange.start}至${recentRange.end}）` : ''}`, '主要渠道', '渠道占比'];
   const data = rows.map(row => isReorders
     ? [imageUrl(row.image), row.code, row.orderNo, row.brand, row.season || '', row.createdAt || '', row.deliveryDate || '', row.orderType || '翻单', row.reorderQty, row.inboundQty === 0 ? '未到货' : row.inboundQty, row.reorderValue, row.netQty, `${(row.sellThrough * 100).toFixed(1)}%`, row.price || '', row.cost || '', row.multiple ? `${row.multiple.toFixed(2)}x` : '', row.stock || 0, row.remainingValue]
-    : [imageUrl(row.image), row.code, row.season || '', row.category || '', row.productTag || '未设置', row.revenue, row.qty, `${(row.signedRate * 100).toFixed(1)}%`, sellThroughLabel(row), row.stock || 0, row.arrivedQty > 0 ? row.arrivedQty : '未到货', row.price || '', row.cost || '', row.price && row.cost ? `${(row.price / row.cost).toFixed(2)}x` : '', row.stockValue, row.topChannel || '', `${(row.topChannelShare * 100).toFixed(1)}%`]);
+    : [imageUrl(row.image), row.code, row.season || '', row.category || '', row.productTag || '未设置', row.revenue, row.qty, `${(row.signedRate * 100).toFixed(1)}%`, sellThroughLabel(row), row.stock || 0, row.price || '', row.cost || '', row.price && row.cost ? `${(row.price / row.cost).toFixed(2)}x` : '', row.stockValue, row.recent7Qty || 0, row.topChannel || '', `${(row.topChannelShare * 100).toFixed(1)}%`]);
   if (!isReorders) {
     head.push('主播筛选', '主播归属说明');
     data.forEach(row => row.push(state.filters.anchor === 'all' ? '全部主播/来源' : state.filters.anchor, '两个IHIMI抖音账号按排班估算：早场07:00、晚场18:00起，按时长匹配支付时间；排班缺失或场次外为未匹配主播。'));
@@ -457,9 +468,10 @@ async function download() {
     const title = isReorders ? '成都翻单明细图文报告' : '成都自研款图文报告';
     const detailRows = isReorders ? reorders.map((row, index) => `<tr><td>${embeddedImages[index] ? `<img src="${embeddedImages[index]}" alt="${escapeHtml(row.code)}">` : '-'}</td><td><b>${escapeHtml(row.code)}</b><small>${escapeHtml(row.orderNo)}</small></td><td>${escapeHtml(row.brand)}</td><td>${escapeHtml(row.season || '-')}</td><td>${escapeHtml(row.createdAt || '-')}</td><td>${escapeHtml(row.deliveryDate || '-')}</td><td>${escapeHtml(row.orderType || '翻单')}</td><td>${integer.format(row.reorderQty)}</td><td>${row.inboundQty === 0 ? '未到货' : integer.format(row.inboundQty)}</td><td>${yuan.format(row.reorderValue)}</td><td>${integer.format(row.netQty)}</td><td>${(row.sellThrough * 100).toFixed(1)}%</td><td>${row.price ? yuan.format(row.price) : '-'}</td><td>${row.multiple ? `${row.multiple.toFixed(2)}x` : '-'}</td><td>${escapeHtml(stockLabel(row))}</td><td>${yuan.format(row.remainingValue)}</td></tr>`).join('') : items.map((item, index) => {
       const status = item.status === 'tested' ? '已测' : item.status === 'mounted' ? '挂车' : item.status === 'reordered' ? '已翻' : '观察中';
-      return `<tr><td>${embeddedImages[index] ? `<img src="${embeddedImages[index]}" alt="${escapeHtml(item.code)}">` : '-'}</td><td><b>${escapeHtml(item.code)}</b></td><td>${escapeHtml(item.brand)}</td><td>${escapeHtml(item.season || '-')}</td><td>${escapeHtml(item.category || '-')}</td><td>${yuan.format(item.revenue)}</td><td>${integer.format(item.qty)}</td><td>${(item.signedRate * 100).toFixed(1)}%</td><td>${sellThroughLabel(item)}</td><td>${escapeHtml(stockLabel(item, true))}</td><td>${item.price ? yuan.format(item.price) : '-'}</td><td>${item.cost ? yuan.format(item.cost) : '-'}</td><td>${item.multiple ? `${item.multiple.toFixed(2)}x` : '-'}</td><td>${yuan.format(item.stockValue)}</td><td>${escapeHtml(item.topChannel || '-')}</td><td>${(item.topChannelShare * 100).toFixed(1)}%</td><td>${status}</td></tr>`;
+      return `<tr><td>${embeddedImages[index] ? `<img src="${embeddedImages[index]}" alt="${escapeHtml(item.code)}">` : '-'}</td><td><b>${escapeHtml(item.code)}</b></td><td>${escapeHtml(item.brand)}</td><td>${escapeHtml(item.season || '-')}</td><td>${escapeHtml(item.category || '-')}</td><td>${yuan.format(item.revenue)}</td><td>${integer.format(item.qty)}</td><td>${(item.signedRate * 100).toFixed(1)}%</td><td>${sellThroughLabel(item)}</td><td>${escapeHtml(stockLabel(item, true))}</td><td>${item.price ? yuan.format(item.price) : '-'}</td><td>${item.cost ? yuan.format(item.cost) : '-'}</td><td>${item.multiple ? `${item.multiple.toFixed(2)}x` : '-'}</td><td>${yuan.format(item.stockValue)}</td><td>${integer.format(item.recent7Qty || 0)}</td><td>${escapeHtml(item.topChannel || '-')}</td><td>${(item.topChannelShare * 100).toFixed(1)}%</td><td>${status}</td></tr>`;
     }).join('');
-    const tableHead = isReorders ? ['图片', '色号编码 / 订单', '品牌', '季节', '创建时间', '计划交货日期', '订单类型', '翻单数量', '未到货数量', '翻单货值', '净销量', '售罄率', '页面价格', '倍率', '当前库存', '剩余货值'] : ['图片', '11位色号编码', '品牌', '季节', '品类', '销售额', '净销量', '签收率', '售罄率', '库存', '页面价格', '成本价', '倍率', '货值', '主要渠道', '渠道占比', '状态'];
+    const recentRange = latestSevenDayRange();
+    const tableHead = isReorders ? ['图片', '色号编码 / 订单', '品牌', '季节', '创建时间', '计划交货日期', '订单类型', '翻单数量', '未到货数量', '翻单货值', '净销量', '售罄率', '页面价格', '倍率', '当前库存', '剩余货值'] : ['图片', '11位色号编码', '品牌', '季节', '品类', '销售额', '净销量', '签收率', '售罄率', '库存', '页面价格', '成本价', '倍率', '货值', `最近7天销量${recentRange.start ? `（${recentRange.start}至${recentRange.end}）` : ''}`, '主要渠道', '渠道占比', '状态'];
     const chartTotal = rows => rows.reduce((total, row) => total + row.value, 0);
     const chartContent = isReorders ? '' : `<section class="charts"><h2>明细图表</h2><div class="charts-grid"><article><h3>26年春夏秋冬货值</h3><p>按 11 位色号编码识别</p>${reportBarRows(seasonal, chartTotal(seasonal))}</article><article><h3>品牌货值</h3><p>当前筛选范围内品牌库存货值</p>${reportBarRows(grouped(item => item.brand), totalStockValue)}</article><article><h3>品类货值</h3><p>当前筛选范围内品类库存货值</p>${reportBarRows(grouped(item => item.category), totalStockValue)}</article></div></section>`;
     const html = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><style>body{margin:0;background:#f4f7fb;color:#132238;font:14px/1.5 Arial,"Microsoft YaHei",sans-serif}main{max-width:1500px;margin:auto;padding:32px}.header{display:flex;justify-content:space-between;gap:20px;border-bottom:2px solid #dce8fb;padding-bottom:20px}.header h1{margin:0;color:#102b58;font-size:28px}.header p{margin:8px 0 0;color:#5d718e}.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin:24px 0}.metric,.charts article,.detail{background:#fff;border:1px solid #cdddf6;border-radius:10px;box-shadow:0 8px 24px rgba(39,76,127,.06)}.metric{padding:16px}.metric p,.charts p{margin:0;color:#61728a;font-size:12px}.metric strong{display:block;margin-top:8px;font-size:26px;color:#063d57}.charts h2{font-size:20px}.charts-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.charts article{padding:18px}.charts h3{margin:0 0 5px;color:#102b58}.bar-row{display:grid;grid-template-columns:72px 1fr 90px 48px;align-items:center;gap:8px;margin:13px 0}.bar-row i{height:9px;background:#e9f0f8;border-radius:999px;overflow:hidden}.bar-row b{display:block;height:100%;border-radius:inherit;background:#4777d8}.bar-row strong,.bar-row em{font-style:normal;text-align:right;color:#0b4d77}.detail{margin-top:24px;padding:18px;overflow:auto}.detail h2{margin:0 0 16px;color:#102b58}table{border-collapse:collapse;width:100%;min-width:1320px}th{background:#f0f5fd;color:#365379;text-align:left;font-size:12px}th,td{border-bottom:1px solid #dce7f5;padding:10px;white-space:nowrap}td img{width:52px;height:64px;object-fit:cover;border-radius:5px;display:block}td small{display:block;color:#6d8098}@media(max-width:800px){main{padding:16px}.metrics,.charts-grid{grid-template-columns:1fr}.header{display:block}}</style></head><body><main><header class="header"><div><h1>${title}</h1><p>导出时间：${new Date().toLocaleString('zh-CN')} · 筛选条件：${escapeHtml(reportFilters())}</p></div><p>数据条数：${isReorders ? reorders.length : items.length}</p></header><section class="metrics">${metricRows.map(([name, value]) => `<article class="metric"><p>${name}</p><strong>${value}</strong></article>`).join('')}</section>${chartContent}<section class="detail"><h2>${isReorders ? '翻单批次明细' : '成都自研款式明细'}</h2><table><thead><tr>${tableHead.map(head => `<th>${head}</th>`).join('')}</tr></thead><tbody>${detailRows}</tbody></table></section></main></body></html>`;
@@ -541,26 +553,31 @@ function init() {
   });
   imagePreview.addEventListener('close', () => imagePreviewContent.removeAttribute('src'));
   const productHover = $('#product-hover-card');
-  const hideProductHover = () => { productHover.classList.remove('visible'); productHover.setAttribute('aria-hidden', 'true'); };
+  const hideProductHover = () => {
+    productHover.classList.remove('visible'); productHover.setAttribute('aria-hidden', 'true');
+    document.querySelectorAll('.product-rank-trigger[aria-expanded="true"]').forEach(button => button.setAttribute('aria-expanded', 'false'));
+  };
   const moveProductHover = event => {
     const gap = 16, width = productHover.offsetWidth || 360, height = productHover.offsetHeight || 280;
     const left = Math.min(window.innerWidth - width - 12, Math.max(12, event.clientX + gap));
     const top = Math.min(window.innerHeight - height - 12, Math.max(12, event.clientY + gap));
     productHover.style.left = `${left}px`; productHover.style.top = `${top}px`;
   };
-  document.addEventListener('mouseover', event => {
-    const target = event.target.closest('[data-product-hover]');
-    if (!target || !state.data) return;
-    const item = products().get(target.dataset.productHover) || state.data.items.find(row => row.code === target.dataset.productHover);
-    if (!item) return;
-    productHover.innerHTML = productHoverMarkup(item); productHover.classList.add('visible'); productHover.setAttribute('aria-hidden', 'false'); moveProductHover(event);
+  document.addEventListener('click', event => {
+    const trigger = event.target.closest('.product-rank-trigger[data-product-hover]');
+    if (trigger && state.data) {
+      if (trigger.getAttribute('aria-expanded') === 'true') { hideProductHover(); return; }
+      const item = products().get(trigger.dataset.productHover) || state.data.items.find(row => row.code === trigger.dataset.productHover);
+      if (!item) return;
+      document.querySelectorAll('.product-rank-trigger[aria-expanded="true"]').forEach(button => button.setAttribute('aria-expanded', 'false'));
+      productHover.innerHTML = productHoverMarkup(item); productHover.classList.add('visible'); productHover.setAttribute('aria-hidden', 'false'); trigger.setAttribute('aria-expanded', 'true');
+      const rect = trigger.getBoundingClientRect(); moveProductHover({ clientX: rect.right, clientY: rect.top });
+      return;
+    }
+    if (event.target.closest('.product-hover-close')) { hideProductHover(); return; }
+    if (!event.target.closest('#product-hover-card')) hideProductHover();
   });
-  document.addEventListener('mousemove', event => { if (event.target.closest('[data-product-hover]')) moveProductHover(event); });
-  document.addEventListener('mouseout', event => { const target = event.target.closest('[data-product-hover]'); if (target && !target.contains(event.relatedTarget) && event.relatedTarget !== productHover && !productHover.contains(event.relatedTarget)) hideProductHover(); });
-  productHover.addEventListener('mouseenter', () => productHover.classList.add('visible'));
-  productHover.addEventListener('mouseleave', hideProductHover);
-  document.addEventListener('focusin', event => { const target = event.target.closest('[data-product-hover]'); if (!target || !state.data) return; const item = products().get(target.dataset.productHover) || state.data.items.find(row => row.code === target.dataset.productHover); if (item) { productHover.innerHTML = productHoverMarkup(item); productHover.classList.add('visible'); productHover.setAttribute('aria-hidden', 'false'); const rect = target.getBoundingClientRect(); moveProductHover({ clientX: rect.right, clientY: rect.top }); } });
-  document.addEventListener('focusout', event => { if (event.target.closest('[data-product-hover]')) hideProductHover(); });
+  document.addEventListener('keydown', event => { if (event.key === 'Escape' && productHover.classList.contains('visible')) hideProductHover(); });
   document.addEventListener('click', event => {
     const control = event.target.closest('[data-list-page]');
     if (!control || control.disabled) return;
