@@ -1,4 +1,4 @@
-const DATA_VERSION = '20261105-inventory-refresh-2';
+const DATA_VERSION = '20261105-seven-day-kpi-1';
 const $ = selector => document.querySelector(selector);
 const yuan = new Intl.NumberFormat('zh-CN', { style: 'currency', currency: 'CNY', maximumFractionDigits: 0 });
 const integer = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 0 });
@@ -347,6 +347,8 @@ function renderChengduScreen() {
     / (multipleBase.reduce((total, item) => total + item.cost * (pricedWithSales.length ? item.qty : 1), 0) || 1);
   $('#chengdu-screen-count').textContent = `${rows.length} 个成都自研翻单款`;
   const metrics = [['翻单货值', yuan.format(reorderValue), '采购订单货值', '采购表中的翻单货值合计。'], ['剩余货值', yuan.format(stockValue), '当前库存 × 成本', '当前库存数量乘以成本价。'], ['销售额', yuan.format(salesAmount), '去退款后', '对应翻单款的已支付销售额，已剔除退款。'], ['翻单款数', integer.format(rows.length), '按款号去重', '有采购翻单记录的成都自研 11 位色号数量。'], ['净销量', integer.format(soldFromStock), '到货数量 - 库存', '按色号汇总当前筛选采购批次的到货数量，减当前库存；每色库存只扣一次，负数按 0 计。'], ['售罄率', `${(reorderQty ? soldFromStock / reorderQty * 100 : 0).toFixed(1)}%`, '（到货数量 - 库存）/ 翻单数量', '按色号汇总当前筛选批次到货数量减当前库存（负数按 0 计），再汇总除以筛选批次下单数量；库存每色只扣一次。日期按采购时间筛选，库存是当前快照；渠道和主播仅筛选对应商品，不拆分库存。'], ['签收率', `${(paidQty ? signedQty / paidQty * 100 : 0).toFixed(1)}%`, '按支付件数', '当前筛选范围内，未退款且已确认收货或交易成功的件数除以全部已支付件数。'], ['倍率', priced.length ? `${multiple.toFixed(2)}倍` : '-', '页面价 / 成本', pricedWithSales.length ? '当前筛选范围内，按净销量加权的页面价除以成本价。' : '当前范围没有销量，按已录入页面价与成本的款式平均计算。'], ['库存数量', integer.format(stockQty), '表格库存合计', '当前筛选结果中，所有产品行“库存”列的数量合计；筛选条件变化时同步变化。']];
+  const recentRange = latestSevenDayRange();
+  metrics.splice(4, 0, ['七天销量', integer.format(sum(stockItems, 'recent7Qty')), recentRange.start ? `${recentRange.start.slice(5)} 至 ${recentRange.end.slice(5)} · 件` : '件', recentRange.start ? `当前筛选表格所有色号最近七天净销量的合计（${recentRange.start} 至 ${recentRange.end}，含首尾日期）；以当前筛选最新成交日为截止日，仅统计已支付且未退款订单，随筛选同步变化。` : '当前筛选范围无有效成交数据，七天销量为 0。']);
   $('#chengdu-metrics').innerHTML = metrics.map(row => `<article class="metric has-tip" data-tip="${row[3]}"><p>${row[0]}</p><strong>${row[1]}</strong><span>${row[2]}</span></article>`).join('');
   renderChengduCharts(stockItems);
 }
