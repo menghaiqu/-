@@ -763,11 +763,10 @@ main { max-width: none; margin-left: 0; padding: 26px 42px 54px; }
 .page-tabs .nav-item:hover, .page-tabs .nav-item.active { background: #ecf7f2; border-color: #91cfb9; color: #166e55; }
 .page-tabs .nav-item.active::before { content: none; }
 
-/* Ten Chengdu overview indicators: four core cards, then six supporting cards. */
-.chengdu-metric-grid { grid-template-columns: repeat(20, minmax(0, 1fr)); gap: 12px; }
-.chengdu-metric-grid .metric { grid-column: span 4; min-height: 106px; }
-.chengdu-metric-grid .metric:nth-child(-n + 4) { grid-column: span 4; }
-.chengdu-metric-grid .metric:nth-child(5) { grid-column: span 4; }
+/* Eleven overview indicators stay in two rows: six core cards, five supporting cards. */
+.chengdu-metric-grid { grid-template-columns: repeat(30, minmax(0, 1fr)); gap: 12px; }
+.chengdu-metric-grid .metric { grid-column: span 6; min-height: 106px; }
+.chengdu-metric-grid .metric:nth-child(-n + 6) { grid-column: span 5; }
 
 .chengdu-chart-panel { margin-top: 18px; padding: 0; border: 1px solid #cadbf5; border-radius: 8px; overflow: hidden; background: #f7faff; }
 .chart-section-head { padding: 13px 18px; border-bottom: 1px solid #d7e4f7; background: #fff; }
@@ -815,7 +814,7 @@ main { max-width: none; margin-left: 0; padding: 26px 42px 54px; }
   .app-header { padding: 0 28px; }
   main { padding: 24px 28px 48px; }
   .chengdu-metric-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .chengdu-metric-grid .metric, .chengdu-metric-grid .metric:nth-child(-n + 4) { grid-column: auto; }
+  .chengdu-metric-grid .metric, .chengdu-metric-grid .metric:nth-child(-n + 6) { grid-column: auto; }
   .chengdu-charts-grid { grid-template-columns: 1fr; }
 }
 
