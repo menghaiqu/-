@@ -1,4 +1,4 @@
-const DATA_VERSION = '20261028-stock-total-1';
+const DATA_VERSION = '20261105-data-refresh-1';
 const $ = selector => document.querySelector(selector);
 const yuan = new Intl.NumberFormat('zh-CN', { style: 'currency', currency: 'CNY', maximumFractionDigits: 0 });
 const integer = new Intl.NumberFormat('zh-CN', { maximumFractionDigits: 0 });
