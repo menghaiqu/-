@@ -767,6 +767,7 @@ main { max-width: none; margin-left: 0; padding: 26px 42px 54px; }
 .chengdu-metric-grid { grid-template-columns: repeat(20, minmax(0, 1fr)); gap: 12px; }
 .chengdu-metric-grid .metric { grid-column: span 4; min-height: 106px; }
 .chengdu-metric-grid .metric:nth-child(-n + 4) { grid-column: span 4; }
+.chengdu-metric-grid .metric:nth-child(5) { grid-column: span 4; }
 
 .chengdu-chart-panel { margin-top: 18px; padding: 0; border: 1px solid #cadbf5; border-radius: 8px; overflow: hidden; background: #f7faff; }
 .chart-section-head { padding: 13px 18px; border-bottom: 1px solid #d7e4f7; background: #fff; }
